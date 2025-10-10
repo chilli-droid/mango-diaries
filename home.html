@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Mango Diaries</title>
+    <link rel="stylesheet" href="frontend-style.css">
+    <script src="firebase-config.js"></script>
+</head>
+<body>
+    <header class="topbar">
+        <h1><img src="assets/logo.PNG" alt="Mango" class="logo">Mango Diaries</h1>
+        <a href="#" id="signOutButton">Log Out</a>
+    </header>
+
+    <main class="container">
+        <section class="card">
+            <h2 id="welcomeHeader">Loading Dashboard...</h2>
+            
+            <div class="grid-menu">
+                <a href="journal/journal.html" class="grid-item card journal-link">Open My Journal</a>
+                <a href="settings.html" class="grid-item card">Settings</a>
+                <a href="notifications.html" class="grid-item card">Notifications</a>
+                <a href="profile.html" class="grid-item card">Profile</a>
+            </div>
+        </section>
+    </main>
+    
+    <div id="messageBox"></div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        const signOutButton = document.getElementById('signOutButton');
+        const welcomeHeader = document.getElementById('welcomeHeader');
+
+        function showMessage(message, isError = false) {
+            const box = document.getElementById('messageBox');
+            box.textContent = message;
+            box.className = 'show';
+            if (isError) box.classList.add('error');
+            else box.classList.remove('error');
+            setTimeout(() => { box.classList.remove('show'); }, 3000);
+        }
+
+        if (Object.keys(firebaseConfig).length > 0) {
+            const app = initializeApp(firebaseConfig);
+            const auth = getAuth(app);
+            const db = getFirestore(app);
+
+            onAuthStateChanged(auth, async (user) => {
+                if (user && !user.isAnonymous) {
+                    let displayName = user.displayName || 'Journaler';
+
+                    try {
+                        const userDoc = await getDoc(doc(db, 'users', user.uid));
+                        if (userDoc.exists()) {
+                            const data = userDoc.data();
+                            if (data.username) displayName = data.username;
+                        }
+                    } catch (err) {
+                        console.warn("Firestore fetch failed:", err);
+                    }
+
+                    welcomeHeader.textContent = `👋 Welcome Back, ${displayName}!`;
+                } else {
+                    showMessage('Access denied. Please sign in.', true);
+                    setTimeout(() => { window.location.href = 'index.html'; }, 500);
+                }
+            });
+
+            signOutButton.addEventListener('click', async (e) => {
+                e.preventDefault();
+                try {
+                    await signOut(auth);
+                    showMessage('Successfully logged out. Goodbye!');
+                    setTimeout(() => { window.location.href = 'index.html'; }, 500);
+                } catch (error) {
+                    console.error("Sign Out Error:", error);
+                    showMessage(`Logout failed: ${error.message}`, true);
+                }
+            });
+        } else {
+            showMessage("System Error: Firebase config missing.", true);
+        }
+    </script>
+</body>
+</html>

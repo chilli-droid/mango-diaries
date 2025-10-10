@@ -1,0 +1,32 @@
+{
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "ignore": [
+        "node_modules",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log",
+        "*.local"
+      ]
+    }
+  ],
+  "firestore": {
+    "rules": {
+      "rules_version": "2",
+      "service": "cloud.firestore",
+      "match /databases/{database}/documents": {
+        "match /users/{userId}": {
+          "allow read, write": "request.auth != null && request.auth.uid == userId"
+        },
+         "match /users/{userId}/journal-entries/{entryId}": {
+          "allow read, write": "request.auth != null && request.auth.uid == userId"
+        },
+        "match /reminders/{reminderId}": {
+          "allow read, write": "request.auth != null"
+        }
+      }
+    }
+  }
+}

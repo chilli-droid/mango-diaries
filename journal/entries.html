@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Entries - My Journal</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/themes.css">
+    <script src="../firebase-config.js"></script>
+    <style>
+        /* Custom Confirm Dialog */
+        .confirm-dialog {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            animation: fadeIn 0.2s ease;
+        }
+
+        .confirm-dialog.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .confirm-dialog-content {
+            background-color: var(--color-secondary-bg);
+            padding: 2rem;
+            border-radius: var(--border-radius-card);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            max-width: 400px;
+            width: 90%;
+            animation: slideIn 0.3s ease;
+        }
+
+        .confirm-dialog-header {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--color-text-dark);
+            margin-bottom: 1rem;
+        }
+
+        .confirm-dialog-message {
+            color: var(--color-text-light);
+            margin-bottom: 1.5rem;
+            line-height: 1.6;
+        }
+
+        .confirm-dialog-buttons {
+            display: flex;
+            gap: 0.75rem;
+            justify-content: flex-end;
+        }
+
+        .confirm-dialog-buttons button {
+            padding: 0.6rem 1.5rem;
+            border-radius: var(--border-radius-card);
+            border: 1px solid var(--color-accent);
+            background-color: var(--color-secondary-bg);
+            cursor: pointer;
+            font-weight: 700;
+            transition: all 0.2s ease;
+            font-family: var(--font-family-primary);
+        }
+
+        .confirm-dialog-buttons .confirm-yes {
+            background-color: #dc3545;
+            color: white;
+            border-color: #dc3545;
+        }
+
+        .confirm-dialog-buttons .confirm-yes:hover {
+            background-color: #c82333;
+        }
+
+        .confirm-dialog-buttons .confirm-no {
+            background-color: var(--color-secondary-bg);
+        }
+
+        .confirm-dialog-buttons .confirm-no:hover {
+            background-color: var(--color-accent);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(-20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .confirm-dialog-content {
+                padding: 1.5rem;
+            }
+            .confirm-dialog-buttons {
+                flex-direction: column;
+            }
+            .confirm-dialog-buttons button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Journal Entries</h1>
+            <nav class="nav-buttons">
+                <a href="../home.html" class="button">← Back to Dashboard</a>
+                <a href="journal.html" class="button">Home</a>
+                <a href="new-entry.html" class="button">New Entry</a>
+                <a href="trash.html" class="button">Trash</a>
+            </nav>
+        </header>
+
+        <section id="entriesControls">
+            <div class="search-controls">
+                <input type="text" id="searchInput" placeholder="Search entries...">
+
+                <div class="sort-slider">
+                    <span class="sort-label">Sort by Oldest</span>
+                    <input type="range" id="sortSlider" min="0" max="1" step="1" value="1">
+                    <span class="sort-label">Sort by Newest</span>
+                </div>
+
+                <select id="viewType">
+                    <option value="list">List View</option>
+                    <option value="calendar">Calendar View</option>
+                </select>
+            </div>
+        </section>
+
+        <section id="calendarView" class="calendar-grid" style="display: none">
+            <div id="calendarHeader">
+                <button id="prevMonth">&lt;</button>
+                <h2 id="currentMonth">Month Year</h2>
+                <button id="nextMonth">&gt;</button>
+            </div>
+            <div id="calendarGrid"></div>
+        </section>
+
+        <section id="entriesList"></section>
+
+        <div id="entryModal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <div id="modalContent"></div>
+            </div>
+        </div>
+
+        <footer>
+            <p>Journal App v0.8</p>
+        </footer>
+    </div>
+
+    <script src="js/main.js" type="module"></script>
+    <script>
+        // Custom Confirm Dialog
+        function createConfirmDialog() {
+            const dialog = document.createElement('div');
+            dialog.className = 'confirm-dialog';
+            dialog.innerHTML = `
+                <div class="confirm-dialog-content">
+                    <div class="confirm-dialog-header"></div>
+                    <div class="confirm-dialog-message"></div>
+                    <div class="confirm-dialog-buttons">
+                        <button class="confirm-no">Cancel</button>
+                        <button class="confirm-yes">Confirm</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(dialog);
+            return dialog;
+        }
+
+        function getConfirmDialog() {
+            let dialog = document.querySelector('.confirm-dialog');
+            if (!dialog) {
+                dialog = createConfirmDialog();
+            }
+            return dialog;
+        }
+
+        window.customConfirm = function(message, title = 'Confirm Action') {
+            return new Promise((resolve) => {
+                const dialog = getConfirmDialog();
+                const header = dialog.querySelector('.confirm-dialog-header');
+                const messageEl = dialog.querySelector('.confirm-dialog-message');
+                const yesBtn = dialog.querySelector('.confirm-yes');
+                const noBtn = dialog.querySelector('.confirm-no');
+
+                header.textContent = title;
+                messageEl.textContent = message;
+
+                dialog.classList.add('show');
+
+                const handleYes = () => {
+                    dialog.classList.remove('show');
+                    cleanup();
+                    resolve(true);
+                };
+
+                const handleNo = () => {
+                    dialog.classList.remove('show');
+                    cleanup();
+                    resolve(false);
+                };
+
+                const handleEscape = (e) => {
+                    if (e.key === 'Escape') {
+                        handleNo();
+                    }
+                };
+
+                const handleBackgroundClick = (e) => {
+                    if (e.target === dialog) {
+                        handleNo();
+                    }
+                };
+
+                function cleanup() {
+                    yesBtn.removeEventListener('click', handleYes);
+                    noBtn.removeEventListener('click', handleNo);
+                    document.removeEventListener('keydown', handleEscape);
+                    dialog.removeEventListener('click', handleBackgroundClick);
+                }
+
+                yesBtn.addEventListener('click', handleYes);
+                noBtn.addEventListener('click', handleNo);
+                document.addEventListener('keydown', handleEscape);
+                dialog.addEventListener('click', handleBackgroundClick);
+
+                noBtn.focus();
+            });
+        };
+
+        // Make functions globally available
+        window.viewEntry = function(firestoreId) {
+            const entries = window.journalApp.entries || [];
+            const entry = entries.find(e => e.firestoreId === firestoreId);
+            if (!entry) return;
+
+            const modal = document.getElementById('entryModal');
+            const modalContent = document.getElementById('modalContent');
+
+            modalContent.innerHTML = `
+                <div class="modal-header">
+                    <h2>${entry.title}</h2>
+                    <button onclick="closeModal()" class="close-button">&times;</button>
+                </div>
+                <div class="entry-view">
+                    <small>Created: ${new Date(entry.date).toLocaleString()}</small>
+                    ${entry.lastModified ?
+                        `<small>Last modified: ${new Date(entry.lastModified).toLocaleString()}</small>` : ''}
+                    <p class="tags">${entry.tags.map(tag => `<span class="tag">${tag}</span>`).join(' ')}</p>
+                    <p class="content">${entry.content}</p>
+                    ${entry.mediaData ? createMediaElement(entry.mediaData) : ''}
+                    ${entry.videoLink ? createVideoElement(entry.videoLink) : ''}
+                </div>
+            `;
+
+            modal.style.display = 'block';
+        };
+
+        window.editEntry = function(firestoreId) {
+            const entries = window.journalApp.entries || [];
+            const entry = entries.find(e => e.firestoreId === firestoreId);
+            if (!entry) return;
+
+            const modal = document.getElementById('entryModal');
+            const modalContent = document.getElementById('modalContent');
+
+            modalContent.innerHTML = `
+                <div class="modal-header">
+                    <h2>Edit Entry</h2>
+                    <button onclick="closeModal()" class="close-button">&times;</button>
+                </div>
+                <form id="editForm">
+                    <div class="form-group">
+                        <label for="editTitle">Title</label>
+                        <input type="text" id="editTitle" value="${entry.title}" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editTags">Tags (start with #)</label>
+                        <input type="text" id="editTags" value="${entry.tags.join(' ')}"
+                               placeholder="Add tags with # (e.g. #happy #journal)">
+                    </div>
+                    <div class="form-group">
+                        <label for="editContent">Content</label>
+                        <textarea id="editContent" required>${entry.content}</textarea>
+                    </div>
+                    <div class="media-preview">
+                        ${entry.mediaData ? createMediaElement(entry.mediaData) : ''}
+                        ${entry.videoLink ? createVideoElement(entry.videoLink) : ''}
+                    </div>
+                    <div class="form-controls">
+                        <button type="submit">Save Changes</button>
+                        <button type="button" onclick="closeModal()">Cancel</button>
+                    </div>
+                </form>
+            `;
+
+            modal.style.display = 'block';
+            document.getElementById('editTitle').focus();
+
+            document.getElementById('editForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                try {
+                    await window.journalApp.updateEntryInFirestore(firestoreId, {
+                        title: document.getElementById('editTitle').value.trim(),
+                        tags: document.getElementById('editTags').value
+                            .split(' ')
+                            .filter(tag => tag.startsWith('#'))
+                            .map(tag => tag.trim()),
+                        content: document.getElementById('editContent').value.trim()
+                    });
+                    closeModal();
+                } catch (error) {
+                    console.error('Error updating entry:', error);
+                    window.journalApp.showNotification('Error updating entry', true);
+                }
+            });
+        };
+
+        window.moveToTrash = async function(firestoreId) {
+            if (!firestoreId) return;
+            
+            const confirmed = await window.customConfirm(
+                'Are you sure you want to move this entry to trash?',
+                'Move to Trash'
+            );
+            
+            if (!confirmed) return;
+            
+            try {
+                await window.journalApp.moveEntryToTrash(firestoreId);
+                window.journalApp.showNotification('Entry moved to trash, please refresh the page.');
+            } catch (error) {
+                console.error('Error moving entry to trash:', error);
+                window.journalApp.showNotification('Error moving to trash', true);
+            }
+        };
+
+        window.closeModal = function() {
+            const modal = document.getElementById('entryModal');
+            if (modal) {
+                modal.style.display = 'none';
+            }
+        };
+
+        function createMediaElement(mediaData) {
+            if (!mediaData || !mediaData.data) return '';
+            switch (mediaData.type) {
+                case 'image':
+                    return `<img src="${mediaData.data}" class="modal-media rounded" alt="Entry image">`;
+                case 'audio':
+                    return `<audio controls src="${mediaData.data}"></audio>`;
+                default:
+                    return '';
+            }
+        }
+
+        function createVideoElement(videoLink) {
+            if (!videoLink) return '';
+            try {
+                let videoId = '';
+                if (videoLink.includes('youtube.com/watch?v=')) {
+                    videoId = new URL(videoLink).searchParams.get('v');
+                } else if (videoLink.includes('youtu.be/')) {
+                    videoId = new URL(videoLink).pathname.substring(1);
+                }
+                
+                if (videoId) {
+                    return `
+                        <div class="video-container">
+                            <iframe 
+                                src="https://www.youtube.com/embed/${videoId}"
+                                class="modal-media rounded"
+                                style="width: 100%; height: 300px;"
+                                frameborder="0"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                allowfullscreen>
+                            </iframe>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error parsing video URL:', error);
+            }
+            return `<p><a href="${videoLink}" target="_blank" rel="noopener noreferrer">🔹 View Video</a></p>`;
+        }
+    </script>
+    <script src="js/entries.js" type="module"></script>
+    <!-- Theme Switcher -->
+    <div class="theme-switcher">
+        <h4>🎨 Themes</h4>
+        <div class="theme-buttons">
+            <button class="theme-btn active" data-theme="default">Peach</button>
+            <button class="theme-btn" data-theme="matcha">Matcha</button>
+            <button class="theme-btn" data-theme="cafe">Cafe</button>
+            <button class="theme-btn" data-theme="saltwater">Saltwater</button>
+            <button class="theme-btn" data-theme="monochrome">Mono</button>
+        </div>
+    </div>
+
+    <script src="js/theme-switcher.js"></script>
+    <script>setupThemeSwitcher();</script>
+</body>
+</html>

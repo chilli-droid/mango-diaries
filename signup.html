@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up - Mango Diaries</title>
+    <link rel="stylesheet" href="frontend-style.css">
+    <script src="firebase-config.js"></script>
+</head>
+<body>
+    <header class="topbar">
+        <h1><img src="assets/logo.PNG" alt="Mango" class="logo">Mango Diaries</h1>
+        <a href="index.html">Back to Home</a>
+    </header>
+
+    <main class="container">
+        <section class="form-card card">
+            <h2>Create Your Journal Account</h2>
+            <form id="signUpForm">
+                <input type="text" id="username" placeholder="Username" required> 
+                <input type="email" id="email" placeholder="Email" required>
+                <input type="password" id="password" placeholder="Password (min 6 characters)" required>
+                <button type="submit" id="submitBtn">Sign Up</button>
+            </form>
+            <p>Already have an account? <a href="signin.html">Sign In Here</a></p>
+        </section>
+    </main>
+
+    <div id="messageBox"></div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword, updateProfile, setPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        const form = document.getElementById('signUpForm');
+        const usernameInput = document.getElementById('username');
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
+        const submitBtn = document.getElementById('submitBtn');
+
+        function showMessage(message, isError = false) {
+            const box = document.getElementById('messageBox');
+            box.textContent = message;
+            box.className = 'show';
+            if (isError) box.classList.add('error');
+            else box.classList.remove('error');
+            setTimeout(() => { box.classList.remove('show'); }, 5000);
+        }
+
+        if (Object.keys(firebaseConfig).length > 0) {
+            const app = initializeApp(firebaseConfig);
+            const auth = getAuth(app);
+            const db = getFirestore(app);
+            
+            setPersistence(auth, browserSessionPersistence).then(() => {
+                form.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    
+                    submitBtn.disabled = true;
+                    submitBtn.textContent = 'Creating account...';
+                    
+                    const username = usernameInput.value.trim();
+                    const email = emailInput.value;
+                    const password = passwordInput.value;
+
+                    if (!username) {
+                        showMessage('Please enter a username.', true);
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = 'Sign Up';
+                        return;
+                    }
+
+                    try {
+                        showMessage('Creating your account...');
+                        
+                        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                        const user = userCredential.user;
+
+                        await updateProfile(user, { displayName: username });
+
+                        await setDoc(doc(db, 'users', user.uid), {
+                            username: username,
+                            email: email,
+                            dateJoined: serverTimestamp()
+                        });
+
+                        showMessage('Account created successfully! Redirecting to dashboard...');
+                        
+                        setTimeout(() => { 
+                            window.location.href = 'home.html'; 
+                        }, 1500);
+
+                    } catch (error) {
+                        console.error("Sign Up Error:", error);
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = 'Sign Up';
+                        
+                        let msg = "An unknown error occurred.";
+                        switch (error.code) {
+                            case 'auth/email-already-in-use':
+                                msg = 'This email is already registered. Please sign in instead.';
+                                break;
+                            case 'auth/invalid-email':
+                                msg = 'Invalid email format.';
+                                break;
+                            case 'auth/weak-password':
+                                msg = 'Password must be at least 6 characters.';
+                                break;
+                            case 'auth/operation-not-allowed':
+                                msg = 'Email/password accounts are not enabled. Please contact support.';
+                                break;
+                        }
+                        showMessage(msg, true);
+                    }
+                });
+            }).catch((error) => {
+                console.error("Persistence error:", error);
+                showMessage("Authentication setup failed", true);
+            });
+        } else {
+            showMessage("System Error: Firebase config missing.", true);
+        }
+    </script>
+</body>
+</html>

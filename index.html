@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mango Diaries - Simple, Consistent Journaling</title>
+    <link rel="stylesheet" href="frontend-style.css">
+    <script src="firebase-config.js"></script>
+    <style>
+        /* Override styles to fix text size and overlap in grid items */
+        .grid-menu .grid-item {
+            font-size: 1rem; /* Reduce base font size for grid items */
+            padding: var(--spacing-md); /* Increase padding for better spacing */
+            text-align: center; /* Ensure text is centered */
+            display: flex;
+            flex-direction: column; /* Stack h3 and p vertically */
+            justify-content: center;
+            align-items: center;
+        }
+
+        .grid-menu .grid-item h3 {
+            font-size: 1.1rem; /* Smaller heading size */
+            margin-bottom: var(--spacing-sm); /* Space between heading and paragraph */
+        }
+
+        .grid-menu .grid-item p {
+            font-size: 0.9rem; /* Smaller paragraph text */
+            color: var(--color-text-light); /* Match lighter text color for readability */
+            margin: 0; /* Remove default margins */
+        }
+    </style>
+</head>
+<body>
+    <header class="topbar">
+        <h1><img src="assets/logo.PNG" alt="Mango" class="logo">Mango Diaries</h1>
+        <div id="authLinks">
+            <a href="signin.html">Sign In</a>  |
+            <a href="signup.html">Sign Up</a>
+        </div>
+    </header>
+
+    <main class="container">
+        <section class="hero-section card">
+            <img src="assets/nugget.PNG" alt="Nugget the Mango" class="nugget-mascot">
+            <h2>Your Cosy, Secure Space for Daily Reflection.</h2>
+            <p>Welcome to Mango Diaries, where thoughtful journaling is made simple, consistent, and always free. Get daily email reminders, reflect on your day, and stay on top of your goals with your companion Nugget*!</p>
+            <a href="signup.html" class="button-link">Start Journaling Today!</a>
+        </section>
+        
+        <section>
+            <h2>Why You Should Try Mango Diaries</h2>
+            <div class="grid-menu">
+                <div class="card grid-item">
+                    <h3>🔐 Safe & Private</h3>
+                    <p>Your entries are private and secure. Your diary is for your eyes only.</p>
+                </div>
+
+                <div class="card grid-item">
+                    <h3>✨ Minimalist Design</h3>
+                    <p>A clean, distraction-free interface for peaceful reflection.</p>
+                </div>
+
+                <div class="card grid-item">
+                    <h3>☕ Cosy Journal Vibe</h3>
+                    <p>Gentle prompts and a calm, digital warm blanket feeling.</p>
+                </div>
+                
+                <div class="card grid-item journal-link">
+                    <h3>✅ Best of All: Free!</h3>
+                    <p>The essential functions are free - no mango-tory features locked behind a paywall.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="card" style="text-align: center;">
+            <h2>✉️ Feedback and Disclaimer</h2>
+            <p>This service is extremely new and still in developing stages. Bugs are unfortunately extremely common and we have tried our best in testing stages to reduce the amount of bugs, but sometimes, you can miss parts. Please give us feedback or bug reports so that we can make this service better.</p>
+            <button>Send feedback to hoolaboolastudios@gmail.com</button>
+        </section>
+
+        <section class="update-info">
+            <p>*Nugget Companion expected to be in service sometime in late July or early August.</p>
+            <p>Current version 0.8 | Cloud server added. Sign-in functionality active. | Notifications being added soon.</p>
+            <strong>Product of Hoola Boola Studios</strong>
+        </section>
+    </main>
+    
+    <div id="messageBox"></div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+
+    const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+
+    function showMessage(message, isError = false) {
+        const box = document.getElementById('messageBox');
+        if (!box) return;
+        box.textContent = message;
+        box.className = isError ? 'show error' : 'show';
+        setTimeout(() => box.classList.remove('show'), 3000);
+    }
+
+    try {
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+    } catch (error) {
+        console.warn("Firebase init warning:", error);
+        // Don't block the page if Firebase fails to initialize
+    }
+
+    window.onload = () => {
+        setTimeout(() => {
+            showMessage("🥭 Welcome to Mango Diaries!", false);
+        }, 500);
+    };
+</script>
+</body>
+</html>

@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile - Mango Diaries</title>
+    <link rel="stylesheet" href="frontend-style.css">
+    <script src="firebase-config.js"></script>
+</head>
+<body>
+    <header class="topbar">
+        <h1><img src="assets/logo.PNG" alt="Mango" class="logo">Mango Diaries</h1>
+        <a href="home.html">Back to Dashboard</a>
+    </header>
+
+    <main class="container">
+        <section class="profile-section card">
+            <h2>Account Details</h2>
+            
+            <div class="profile-picture">
+                <input type="file" id="profilePicInput" accept="image/*" style="display: none;">
+                <label for="profilePicInput" class="profile-pic-label">
+                    <img id="profilePicture" src="assets/default-profile.png" alt="Profile Picture">
+                    <div class="overlay">Change Photo</div>
+                </label>
+            </div>
+            
+            <h2 id="profileUsername">Loading Username...</h2>
+            
+            <div class="user-details" style="text-align: left; margin-top: 20px;">
+                <p><strong>Email:</strong> <span id="profileEmail">...</span></p>
+                <p><strong>Date Joined:</strong> <span id="profileJoined">...</span></p>
+            </div>
+        </section>
+    </main>
+    
+    <div id="messageBox"></div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        
+        const usernameEl = document.getElementById('profileUsername');
+        const emailEl = document.getElementById('profileEmail');
+        const joinedEl = document.getElementById('profileJoined');
+
+        function showMessage(message, isError = false) {
+            const box = document.getElementById('messageBox');
+            box.textContent = message;
+            box.className = 'show';
+            if (isError) { box.classList.add('error'); } else { box.classList.remove('error'); }
+            setTimeout(() => { box.classList.remove('show'); }, 3000);
+        }
+
+        function formatDate(timestamp) {
+            if (!timestamp) return 'Unknown';
+            const date = new Date(timestamp);
+            return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+        }
+
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+
+        if (Object.keys(firebaseConfig).length > 0) {
+            const app = initializeApp(firebaseConfig);
+            const auth = getAuth(app);
+            
+            onAuthStateChanged(auth, (user) => {
+                if (user && !user.isAnonymous) {
+                    const username = user.displayName || 'No Username Set';
+                    const email = user.email || 'No Email';
+                    const dateJoined = user.metadata.creationTime;
+
+                    usernameEl.textContent = username;
+                    emailEl.textContent = email;
+                    joinedEl.textContent = formatDate(dateJoined);
+                    
+                } else {
+                    console.log("User not signed in. Redirecting to landing.");
+                    showMessage('Access denied. Please sign in.', true);
+                    usernameEl.textContent = 'Not Signed In';
+                    setTimeout(() => { window.location.href = 'index.html'; }, 500);
+                }
+            });
+        } else {
+            showMessage("System Error: Firebase config missing. Authentication disabled.", true);
+            usernameEl.textContent = 'System Error';
+        }
+
+        document.getElementById('profilePicInput').addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                try {
+                    const compressedImage = await journalApp.compressImage(file);
+                    document.getElementById('profilePicture').src = compressedImage;
+                    // Here you would typically upload to Firebase Storage
+                    showMessage('Profile picture updated!');
+                } catch (error) {
+                    showMessage('Error updating profile picture', true);
+                }
+            }
+        });
+    </script>
+</body>
+</html>

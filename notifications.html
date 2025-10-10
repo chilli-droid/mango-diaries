@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notifications - Daily Journal</title>
+    <link rel="stylesheet" href="frontend-style.css">
+    <script src="firebase-config.js"></script>
+</head>
+<body>
+    <header class="topbar">
+        <h1>Mango Diaries</h1>
+        <a href="home.html">Back to Dashboard</a>
+    </header>
+
+    <main class="container">
+        <section class="card">
+            <h2>🔔 Notifications & Reminders</h2>
+            <p>Notifications are coming soon!</p>
+            
+            <div style="margin-top: 20px; padding: 15px; background-color: var(--color-main-bg); border-radius: 4px;">
+                <p><strong>Notifications Coming Updates:</strong></p>
+                <ul style="margin-left: 20px;">
+                    <li>Daily Reminders Notification</li>
+                    <li>Custom Notification Scheduling</li>
+                    <li>Weekly progress summaries</li>
+                    <li>Achievement notifications</li>
+                </ul>
+            </div>
+        </section>
+    </main>
+
+    <div id="messageBox"></div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+
+        function showMessage(message, isError = false) {
+            const box = document.getElementById('messageBox');
+            box.textContent = message;
+            box.className = 'show';
+            if (isError) { box.classList.add('error'); } else { box.classList.remove('error'); }
+            setTimeout(() => { box.classList.remove('show'); }, 3000);
+        }
+
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+
+        if (Object.keys(firebaseConfig).length > 0) {
+            const app = initializeApp(firebaseConfig);
+            const auth = getAuth(app);
+            
+            // Authentication Guard
+            onAuthStateChanged(auth, (user) => {
+                if (user && !user.isAnonymous) {
+                    console.log("User authorized on Notifications page.");
+                } else {
+                    console.log("User not signed in. Redirecting to landing.");
+                    showMessage('Access denied. Please sign in.', true);
+                    setTimeout(() => { window.location.href = 'index.html'; }, 500);
+                }
+            });
+        } else {
+            showMessage("System Error: Firebase config missing. Authentication disabled.", true);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Trash - My Journal</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/themes.css">
+    <script src="../firebase-config.js"></script>
+    <style>
+        /* Custom Confirm Dialog */
+        .confirm-dialog {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            animation: fadeIn 0.2s ease;
+        }
+
+        .confirm-dialog.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .confirm-dialog-content {
+            background-color: var(--color-secondary-bg);
+            padding: 2rem;
+            border-radius: var(--border-radius-card);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            max-width: 400px;
+            width: 90%;
+            animation: slideIn 0.3s ease;
+        }
+
+        .confirm-dialog-header {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--color-text-dark);
+            margin-bottom: 1rem;
+        }
+
+        .confirm-dialog-message {
+            color: var(--color-text-light);
+            margin-bottom: 1.5rem;
+            line-height: 1.6;
+        }
+
+        .confirm-dialog-buttons {
+            display: flex;
+            gap: 0.75rem;
+            justify-content: flex-end;
+        }
+
+        .confirm-dialog-buttons button {
+            padding: 0.6rem 1.5rem;
+            border-radius: var(--border-radius-card);
+            border: 1px solid var(--color-accent);
+            background-color: var(--color-secondary-bg);
+            cursor: pointer;
+            font-weight: 700;
+            transition: all 0.2s ease;
+            font-family: var(--font-family-primary);
+        }
+
+        .confirm-dialog-buttons .confirm-yes {
+            background-color: #dc3545;
+            color: white;
+            border-color: #dc3545;
+        }
+
+        .confirm-dialog-buttons .confirm-yes:hover {
+            background-color: #c82333;
+        }
+
+        .confirm-dialog-buttons .confirm-no {
+            background-color: var(--color-secondary-bg);
+        }
+
+        .confirm-dialog-buttons .confirm-no:hover {
+            background-color: var(--color-accent);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(-20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .confirm-dialog-content {
+                padding: 1.5rem;
+            }
+            .confirm-dialog-buttons {
+                flex-direction: column;
+            }
+            .confirm-dialog-buttons button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Trash</h1>
+            <nav class="nav-buttons">
+                <a href="../home.html" class="button">← Back to Dashboard</a>
+                <a href="journal.html" class="button">Home</a>
+                <a href="new-entry.html" class="button">New Entry</a>
+                <a href="entries.html" class="button">View Entries</a>
+            </nav>
+        </header>
+
+        <section id="trashSection">
+            <div id="trashList"></div>
+        </section>
+
+        <div id="entryModal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <div id="modalContent"></div>
+            </div>
+        </div>
+
+        <footer>
+            <p>Journal App v0.8</p>
+        </footer>
+    </div>
+
+    <script src="js/main.js" type="module"></script>
+    <script>
+        // Custom Confirm Dialog
+        function createConfirmDialog() {
+            const dialog = document.createElement('div');
+            dialog.className = 'confirm-dialog';
+            dialog.innerHTML = `
+                <div class="confirm-dialog-content">
+                    <div class="confirm-dialog-header"></div>
+                    <div class="confirm-dialog-message"></div>
+                    <div class="confirm-dialog-buttons">
+                        <button class="confirm-no">Cancel</button>
+                        <button class="confirm-yes">Confirm</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(dialog);
+            return dialog;
+        }
+
+        function getConfirmDialog() {
+            let dialog = document.querySelector('.confirm-dialog');
+            if (!dialog) {
+                dialog = createConfirmDialog();
+            }
+            return dialog;
+        }
+
+        window.customConfirm = function(message, title = 'Confirm Action') {
+            return new Promise((resolve) => {
+                const dialog = getConfirmDialog();
+                const header = dialog.querySelector('.confirm-dialog-header');
+                const messageEl = dialog.querySelector('.confirm-dialog-message');
+                const yesBtn = dialog.querySelector('.confirm-yes');
+                const noBtn = dialog.querySelector('.confirm-no');
+
+                header.textContent = title;
+                messageEl.textContent = message;
+
+                dialog.classList.add('show');
+
+                const handleYes = () => {
+                    dialog.classList.remove('show');
+                    cleanup();
+                    resolve(true);
+                };
+
+                const handleNo = () => {
+                    dialog.classList.remove('show');
+                    cleanup();
+                    resolve(false);
+                };
+
+                const handleEscape = (e) => {
+                    if (e.key === 'Escape') {
+                        handleNo();
+                    }
+                };
+
+                const handleBackgroundClick = (e) => {
+                    if (e.target === dialog) {
+                        handleNo();
+                    }
+                };
+
+                function cleanup() {
+                    yesBtn.removeEventListener('click', handleYes);
+                    noBtn.removeEventListener('click', handleNo);
+                    document.removeEventListener('keydown', handleEscape);
+                    dialog.removeEventListener('click', handleBackgroundClick);
+                }
+
+                yesBtn.addEventListener('click', handleYes);
+                noBtn.addEventListener('click', handleNo);
+                document.addEventListener('keydown', handleEscape);
+                dialog.addEventListener('click', handleBackgroundClick);
+
+                noBtn.focus();
+            });
+        };
+    </script>
+    <script src="js/trash.js" type="module"></script>
+</body>
+</html>

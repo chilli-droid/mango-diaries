@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>New Entry - My Journal</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/themes.css">
+    <script src="../firebase-config.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>New Entry</h1>
+            <nav class="nav-buttons">
+                <a href="../home.html" class="button">← Back to Dashboard</a>
+                <a href="journal.html" class="button">Home</a>
+                <a href="entries.html" class="button">View Entries</a>
+                <a href="trash.html" class="button">Trash</a>
+            </nav>
+        </header>
+
+        <section id="newEntrySection">
+            <form id="entryForm">
+                <input type="text" id="entryTitle" placeholder="Title" required>
+                <input type="text" id="entryTags" placeholder="Add tags with # (e.g. #happy #journal)">
+                <textarea id="entryContent" placeholder="Write your thoughts..." required></textarea>
+                
+                <div class="media-upload">
+                    <div class="upload-buttons">
+                        <label for="entryImage" class="file-input-label">Add Image</label>
+                        <input type="file" id="entryImage" accept="image/*">
+                        
+                        <label for="entryAudio" class="file-input-label">Add Audio</label>
+                        <input type="file" id="entryAudio" accept="audio/*">
+                    </div>
+                    
+                    <input type="url" id="entryVideoLink" placeholder="Video link (YouTube or Google Drive)" style="margin-top: 1rem;">
+                    <small style="display: block; color: #666; margin-top: 0.5rem;">Paste a YouTube or Google Drive video link</small>
+
+                    <div class="media-preview">
+                        <img id="imagePreview" class="preview-media rounded" style="display: none;">
+                        <iframe id="videoPreview" class="preview-media rounded" style="display: none; width: 100%; height: 300px;" frameborder="0" allowfullscreen></iframe>
+                        <audio id="audioPreview" controls style="display: none;"></audio>
+                    </div>
+                </div>
+
+                <button type="submit" class="primary-button">Save Entry</button>
+            </form>
+        </section>
+
+        <footer>
+            <p>Journal App v0.8</p>
+        </footer>
+    </div>
+
+    <script src="js/main.js" type="module"></script>
+    <script src="js/new-entry.js" type="module"></script>
+    <!-- Theme Switcher -->
+<div class="theme-switcher">
+    <h4>🎨 Themes</h4>
+    <div class="theme-buttons">
+        <button class="theme-btn active" data-theme="default">Peach</button>
+        <button class="theme-btn" data-theme="matcha">Matcha</button>
+        <button class="theme-btn" data-theme="cafe">Cafe</button>
+        <button class="theme-btn" data-theme="saltwater">Saltwater</button>
+        <button class="theme-btn" data-theme="monochrome">Mono</button>
+    </div>
+</div>
+
+<script src="js/theme-switcher.js"></script>
+<script>setupThemeSwitcher();</script>
+</body>
+</html>

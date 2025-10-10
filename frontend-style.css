@@ -1,0 +1,326 @@
+@import url('https://fonts.googleapis.com/css2?family=Sen:wght@400;700&display=swap');
+
+/* --- General Styles --- */
+:root {
+    --color-main-bg: #FAF9F6; /* Off-white */
+    --color-secondary-bg: #FFFFFF; /* Pure White */
+    --color-accent: #FCDAC0; /* Peach */
+    --color-text-dark: #333333; /* Dark Grey for text */
+    --color-text-light: #666666; /* Medium Grey for subtle text */
+    --font-family-primary: 'Sen', sans-serif;
+    --border-radius-card: 8px;
+    --border-radius-input: 4px;
+    --spacing-lg: 32px;
+    --spacing-md: 20px;
+    --spacing-sm: 12px;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: var(--font-family-primary);
+    background-color: var(--color-main-bg);
+    color: var(--color-text-dark);
+    line-height: 1.6;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* --- Typography and Links --- */
+h1, h2 {
+    font-weight: 700;
+    color: var(--color-text-dark);
+}
+
+h1 {
+    font-size: 1.8rem;
+}
+
+h2 {
+    font-size: 1.5rem;
+    margin-bottom: var(--spacing-md);
+}
+
+a {
+    color: var(--color-text-dark);
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+a:hover {
+    color: var(--color-accent);
+}
+
+/* --- Layout Containers --- */
+.container {
+    max-width: 900px;
+    width: 90%;
+    margin: 0 auto;
+    padding: var(--spacing-md) 0;
+    flex-grow: 1; 
+}
+
+/* --- Top Bar --- */
+.topbar {
+    background-color: var(--color-secondary-bg);
+    padding: var(--spacing-sm) var(--spacing-md);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.topbar h1 {
+    font-size: 1.5rem;
+}
+
+.topbar a {
+    padding: 4px 8px;
+    font-weight: 700;
+    color: var(--color-text-light); 
+}
+
+.topbar a:hover {
+    color: var(--color-accent);
+}
+
+/* --- Card/Panel Styling --- */
+.card {
+    background-color: var(--color-secondary-bg);
+    border-radius: var(--border-radius-card);
+    padding: var(--spacing-lg);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    margin-bottom: var(--spacing-lg);
+}
+
+/* --- Buttons --- */
+button, .button-link {
+    display: block; 
+    width: 100%;
+    padding: 10px 15px;
+    background-color: var(--color-accent);
+    color: var(--color-text-dark);
+    border: none;
+    border-radius: var(--border-radius-input);
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 700;
+    transition: background-color 0.2s ease, opacity 0.2s ease;
+    text-align: center;
+    text-decoration: none; 
+    margin-top: var(--spacing-sm);
+}
+
+button:hover, .button-link:hover {
+    background-color: #fbd3a9; 
+}
+
+/* --- Forms and Inputs --- */
+form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
+}
+
+input[type="text"],
+input[type="email"],
+input[type="password"] {
+    width: 100%;
+    padding: 10px;
+    border: 1.5px solid var(--color-accent);
+    border-radius: var(--border-radius-input);
+    background-color: var(--color-secondary-bg);
+    font-family: var(--font-family-primary);
+    font-size: 1rem;
+    transition: border-color 0.2s ease;
+}
+
+input:focus {
+    outline: none;
+    border-color: #ffa55d; 
+}
+
+/* --- Specific Page Styles --- */
+
+/* Landing Page */
+.hero-section {
+    text-align: center;
+    padding: var(--spacing-lg) 0;
+}
+
+.hero-section h2 {
+    font-size: 2.5rem;
+    margin-bottom: var(--spacing-sm);
+}
+
+.hero-section p {
+    font-size: 1.1rem;
+    color: var(--color-text-light);
+    margin-bottom: var(--spacing-md);
+}
+
+.update-info {
+    font-size: 0.9rem;
+    color: var(--color-text-light);
+    text-align: center;
+    padding-top: var(--spacing-md);
+    border-top: 1px dashed #e0e0e0;
+    margin-top: var(--spacing-lg);
+}
+
+/* Home Page Grid */
+.grid-menu {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: var(--spacing-md);
+    margin-top: var(--spacing-md);
+}
+
+.grid-item {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100px;
+    font-size: 1.2rem;
+    font-weight: 700;
+    transition: transform 0.2s ease;
+}
+
+.grid-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.08);
+}
+
+/* Highlight the Journal link within the grid */
+.journal-link {
+    border: 2px solid var(--color-accent); 
+    color: var(--color-text-dark);
+    font-weight: 700;
+}
+
+.journal-link:hover {
+    background-color: var(--color-accent);
+}
+
+/* Profile Page */
+.profile-section {
+    text-align: center;
+}
+
+.profile-picture {
+    width: 100px;
+    height: 100px;
+    margin: 0 auto var(--spacing-sm);
+    border-radius: 50%;
+    overflow: hidden;
+    border: 3px solid var(--color-accent);
+}
+
+.profile-picture img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.profile-section h2 {
+    margin-bottom: 4px;
+}
+
+.profile-section p {
+    color: var(--color-text-dark);
+    font-size: 1rem;
+}
+
+/* Sign In/Up Specific Styling */
+.form-card {
+    max-width: 400px;
+    margin: var(--spacing-lg) auto;
+}
+
+.form-card p {
+    text-align: center;
+    margin-top: var(--spacing-md);
+}
+
+/* --- New CSS for System Messages --- */
+#messageBox {
+    position: fixed;
+    bottom: 20px;  /* Changed from top to bottom */
+    right: 20px;
+    background-color: #ffe0b2;
+    color: var(--color-text-dark);
+    padding: 12px 20px;
+    border-radius: var(--border-radius-input);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    font-size: 0.9rem;
+    font-weight: 700;
+    z-index: 100;  /* Reduced z-index */
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+    pointer-events: none;  /* Added to prevent interaction with the message box */
+}
+
+#messageBox.show {
+    opacity: 1;
+}
+
+.error {
+    background-color: #ffcccc !important; /* Red for errors */
+}
+
+/* Logo Header Styles - Add to frontend-style.css */
+.topbar h1 {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1.5rem;
+}
+
+.logo {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+}
+
+/* Nugget Mascot Styles */
+.nugget-mascot {
+    width: 120px;
+    height: 120px;
+    object-fit: contain;
+    margin: 1rem auto;
+    display: block;
+    animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+}
+
+.nugget-helper {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background-color: var(--color-secondary-bg);
+    border-radius: var(--border-radius-card);
+    margin: 1rem 0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.nugget-helper img {
+    width: 60px;
+    height: 60px;
+    object-fit: contain;
+}
+
+.nugget-helper p {
+    margin: 0;
+    color: var(--color-text-dark);
+}
