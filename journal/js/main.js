@@ -48,7 +48,7 @@ function initializeFirebase() {
                 console.warn('User not authenticated. Redirecting to landing page.');
                 showNotification('Please sign in to access your journal.', true);
                 setTimeout(() => {
-                    window.location.href = '../landing.html';
+                    window.location.href = '../index.html';
                 }, 2000);
             }
         });
@@ -323,7 +323,7 @@ async function checkAuth() {
     if (!auth.currentUser || auth.currentUser.isAnonymous) {
         showNotification('Please sign in to access your journal.', true);
         setTimeout(() => {
-            window.location.href = '../landing.html';
+            window.location.href = '../index.html';
         }, 1500);
         return false;
     }

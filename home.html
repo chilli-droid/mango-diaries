@@ -68,7 +68,7 @@
                     welcomeHeader.textContent = `👋 Welcome Back, ${displayName}!`;
                 } else {
                     showMessage('Access denied. Please sign in.', true);
-                    setTimeout(() => { window.location.href = 'landing.html'; }, 500);
+                    setTimeout(() => { window.location.href = 'index.html'; }, 500);
                 }
             });
 
@@ -77,7 +77,7 @@
                 try {
                     await signOut(auth);
                     showMessage('Successfully logged out. Goodbye!');
-                    setTimeout(() => { window.location.href = 'landing.html'; }, 500);
+                    setTimeout(() => { window.location.href = 'index.html'; }, 500);
                 } catch (error) {
                     console.error("Sign Out Error:", error);
                     showMessage(`Logout failed: ${error.message}`, true);
