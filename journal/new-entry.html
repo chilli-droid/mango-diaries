@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <title>New Entry - My Journal</title>
-    <link rel="stylesheet" href="css/style.css">
-    <link rel="stylesheet" href="css/themes.css">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="themes.css">
     <script src="../firebase-config.js"></script>
 </head>
 <body>
@@ -53,21 +53,35 @@
         </footer>
     </div>
 
-    <script src="js/main.js" type="module"></script>
-    <script src="js/new-entry.js" type="module"></script>
+    <!-- Load main.js first to initialize journalApp -->
+    <script src="main.js" type="module"></script>
+    <!-- Then load new-entry.js -->
+    <script src="new-entry.js"></script>
+    
     <!-- Theme Switcher -->
-<div class="theme-switcher">
-    <h4>🎨 Themes</h4>
-    <div class="theme-buttons">
-        <button class="theme-btn active" data-theme="default">Peach</button>
-        <button class="theme-btn" data-theme="matcha">Matcha</button>
-        <button class="theme-btn" data-theme="cafe">Cafe</button>
-        <button class="theme-btn" data-theme="saltwater">Saltwater</button>
-        <button class="theme-btn" data-theme="monochrome">Mono</button>
+    <div class="theme-switcher">
+        <h4>🎨 Themes</h4>
+        <div class="theme-buttons">
+            <button class="theme-btn active" data-theme="default">Peach</button>
+            <button class="theme-btn" data-theme="matcha">Matcha</button>
+            <button class="theme-btn" data-theme="cafe">Cafe</button>
+            <button class="theme-btn" data-theme="saltwater">Saltwater</button>
+            <button class="theme-btn" data-theme="monochrome">Mono</button>
+        </div>
     </div>
-</div>
 
-<script src="js/theme-switcher.js"></script>
-<script>setupThemeSwitcher();</script>
+    <script src="theme-switcher.js"></script>
+    <script>
+        // Wait for theme switcher to load
+        if (typeof setupThemeSwitcher === 'function') {
+            setupThemeSwitcher();
+        } else {
+            window.addEventListener('load', () => {
+                if (typeof setupThemeSwitcher === 'function') {
+                    setupThemeSwitcher();
+                }
+            });
+        }
+    </script>
 </body>
 </html>
