@@ -16,9 +16,6 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebas
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-// **New imports for Storage**
-import { getStorage, ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js';
-
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB limit
 const APP_VERSION = '0.8';
 
@@ -26,7 +23,6 @@ const APP_VERSION = '0.8';
 let entriesCollectionRef;
 let unsubscribeListener;
 let db, userId, appId;
-let storage;
 
 // Initialize Firebase and get user info
 function initializeFirebase() {
@@ -42,7 +38,6 @@ function initializeFirebase() {
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         db = getFirestore(app);
-        storage = getStorage(app);
 
         onAuthStateChanged(auth, (user) => {
             if (user && !user.isAnonymous) {
@@ -100,17 +95,19 @@ function setupRealtimeListener() {
     unsubscribeListener = onSnapshot(q, (snapshot) => {
         journalApp.entries = [];
         
-        snapshot.forEach((docSnap) => {
-            const entryData = docSnap.data();
+        snapshot.forEach((doc) => {
+            const entryData = doc.data();
             journalApp.entries.push({
-                firestoreId: docSnap.id,
+                firestoreId: doc.id,
                 ...entryData,
+                // Convert Firestore timestamps back to ISO strings if needed
                 date: entryData.date?.toDate ? entryData.date.toDate().toISOString() : entryData.date,
                 lastModified: entryData.lastModified?.toDate ? entryData.lastModified.toDate().toISOString() : entryData.lastModified,
                 deletedDate: entryData.deletedDate?.toDate ? entryData.deletedDate.toDate().toISOString() : entryData.deletedDate
             });
         });
         
+        // Trigger UI updates if render functions exist
         if (typeof renderEntries === 'function') {
             renderEntries();
         }
@@ -126,18 +123,11 @@ function setupRealtimeListener() {
     });
 }
 
-// Utility: upload a file to Storage and return URL
-async function uploadFileToStorage(file, path) {
-    const storageRef = ref(storage, path);
-    await uploadBytes(storageRef, file);
-    const url = await getDownloadURL(storageRef);
-    return url;
-}
-
-// Save new entry to Firestore (with media URL support)
+// Save new entry to Firestore
 async function saveEntryToFirestore(entryData) {
     if (!await checkAuth()) return;
 
+    // Validate entry data
     if (!entryData.title?.trim()) {
         throw new Error('Title is required');
     }
@@ -145,6 +135,7 @@ async function saveEntryToFirestore(entryData) {
         throw new Error('Content is required');
     }
 
+    // Validate video link if present
     if (entryData.videoLink) {
         const validVideoUrl = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be|drive\.google\.com).+$/;
         if (!validVideoUrl.test(entryData.videoLink)) {
@@ -159,7 +150,7 @@ async function saveEntryToFirestore(entryData) {
             userId: userId,
             lastModified: serverTimestamp()
         };
-
+        
         const docRef = await addDoc(entriesCollectionRef, docData);
         showNotification('Loading...');
         return docRef.id;
@@ -179,6 +170,7 @@ async function updateEntryInFirestore(firestoreId, updatedData) {
             lastModified: serverTimestamp(),
             userId: userId
         };
+        
         await updateDoc(docRef, updateData);
         showNotification('Entry updated successfully, please refresh the page');
         return true;
@@ -194,6 +186,7 @@ async function moveEntryToTrash(firestoreId) {
     if (!firestoreId) {
         throw new Error('No entry ID provided');
     }
+
     try {
         const docRef = doc(entriesCollectionRef, firestoreId);
         await updateDoc(docRef, {
@@ -204,7 +197,7 @@ async function moveEntryToTrash(firestoreId) {
         return true;
     } catch (error) {
         console.error('Error moving entry to trash:', error);
-        throw error;
+        throw error; // Re-throw to handle in UI
     }
 }
 
@@ -226,7 +219,7 @@ async function restoreEntryFromTrash(firestoreId) {
     }
 }
 
-// Permanently delete entry
+// Permanently delete entry from Firestore
 async function deleteEntryPermanently(firestoreId) {
     try {
         const docRef = doc(entriesCollectionRef, firestoreId);
@@ -240,7 +233,7 @@ async function deleteEntryPermanently(firestoreId) {
     }
 }
 
-// Image compression utility (similar to before)
+// Utility functions
 function compressImage(file) {
     return new Promise((resolve) => {
         const reader = new FileReader();
@@ -251,6 +244,7 @@ function compressImage(file) {
                 let width = img.width;
                 let height = img.height;
 
+                // Calculate new dimensions
                 if (width > 800) {
                     height = height * (800 / width);
                     width = 800;
@@ -258,6 +252,7 @@ function compressImage(file) {
 
                 canvas.width = width;
                 canvas.height = height;
+
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0, width, height);
                 resolve(canvas.toDataURL('image/jpeg', 0.7));
@@ -268,8 +263,6 @@ function compressImage(file) {
     });
 }
 
-// Sorting, notifications, backward compatibility, cleanup, auth checks, etc.
-
 function sortEntries(entries, sortBy = 'newest') {
     return [...entries].sort((a, b) => {
         const dateA = new Date(a.date).getTime();
@@ -279,6 +272,7 @@ function sortEntries(entries, sortBy = 'newest') {
 }
 
 function showNotification(message, isError = false) {
+    // Create notifications container if it doesn't exist
     let container = document.querySelector('.notifications-container');
     if (!container) {
         container = document.createElement('div');
@@ -290,8 +284,10 @@ function showNotification(message, isError = false) {
     notification.className = 'notification';
     if (isError) notification.classList.add('error');
     notification.textContent = message;
-
+    
     container.appendChild(notification);
+    
+    // Trigger animation
     requestAnimationFrame(() => {
         notification.classList.add('show');
     });
@@ -302,6 +298,7 @@ function showNotification(message, isError = false) {
     }, 3000);
 }
 
+// Deprecated localStorage functions (kept for backward compatibility)
 function getFromLocalStorage() {
     console.warn('getFromLocalStorage is deprecated. Use journalApp.entries instead.');
     return journalApp.entries || [];
@@ -312,6 +309,7 @@ function saveToLocalStorage(entries) {
     return false;
 }
 
+// Cleanup function
 function cleanup() {
     if (unsubscribeListener) {
         unsubscribeListener();
@@ -319,6 +317,7 @@ function cleanup() {
     }
 }
 
+// Add after cleanup function
 async function checkAuth() {
     const auth = getAuth();
     if (!auth.currentUser || auth.currentUser.isAnonymous) {
@@ -331,12 +330,15 @@ async function checkAuth() {
     return true;
 }
 
+// Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     initializeFirebase();
 });
 
+// Clean up on page unload
 window.addEventListener('beforeunload', cleanup);
 
+// Error handling
 window.addEventListener('unhandledrejection', function(event) {
     console.error('Unhandled promise rejection:', event.reason);
     showNotification('An unexpected error occurred. Please try again.', true);
@@ -348,6 +350,7 @@ window.onerror = function(msg, url, line, col, error) {
     return false;
 };
 
+// Export global journalApp object
 window.journalApp = {
     MAX_FILE_SIZE,
     APP_VERSION,
@@ -355,16 +358,17 @@ window.journalApp = {
     initializeFirebase,
     cleanup,
     checkAuth,
+    // Firestore functions
     saveEntryToFirestore,
     updateEntryInFirestore,
     moveEntryToTrash,
     restoreEntryFromTrash,
     deleteEntryPermanently,
+    // Utility functions
     showNotification,
     sortEntries,
     compressImage,
+    // Deprecated localStorage functions (for backward compatibility)
     getFromLocalStorage,
-    saveToLocalStorage,
-    // new Storage helper
-    uploadFileToStorage
+    saveToLocalStorage
 };
