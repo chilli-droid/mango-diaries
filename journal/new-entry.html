@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>New Entry - My Journal</title>
-    <link rel="stylesheet" href="../journal/css/style.css">
-    <link rel="stylesheet" href="../journal/css/themes.css">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/themes.css">
     <script src="../firebase-config.js"></script>
     <style>
         /* Additional theme switcher button styles */
@@ -85,9 +85,9 @@
     </div>
 
     <!-- Load main.js first to initialize journalApp -->
-    <script src="main.js" type="module"></script>
+    <script src="js/main.js" type="module"></script>
     <!-- Then load new-entry.js -->
-    <script src="new-entry.js"></script>
+    <script src="js/new-entry.js"></script>
     
     <!-- Theme Switcher -->
     <div class="theme-switcher">
@@ -101,18 +101,7 @@
         </div>
     </div>
 
-    <script src="theme-switcher.js"></script>
-    <script>
-        // Wait for theme switcher to load
-        if (typeof setupThemeSwitcher === 'function') {
-            setupThemeSwitcher();
-        } else {
-            window.addEventListener('load', () => {
-                if (typeof setupThemeSwitcher === 'function') {
-                    setupThemeSwitcher();
-                }
-            });
-        }
-    </script>
+    <script src="js/theme-switcher.js"></script>
+    <script>setupThemeSwitcher();</script>
 </body>
 </html>
