@@ -9,8 +9,7 @@ import {
     query, 
     orderBy,
     serverTimestamp,
-    enableIndexedDbPersistence,
-    Timestamp
+    enableIndexedDbPersistence
 } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
@@ -145,30 +144,19 @@ async function saveEntryToFirestore(entryData) {
     }
 
     try {
-        // Create document data with current timestamp
-        const now = Timestamp.now();
         const docData = {
-            title: entryData.title,
-            content: entryData.content,
-            tags: entryData.tags || [],
-            videoLink: entryData.videoLink || null,
-            mediaData: entryData.mediaData || null,
-            deleted: false,
-            date: now,
+            ...entryData,
+            date: serverTimestamp(),
             userId: userId,
-            lastModified: now
+            lastModified: serverTimestamp()
         };
         
-        console.log('Attempting to save entry:', docData);
         const docRef = await addDoc(entriesCollectionRef, docData);
-        console.log('Entry saved with ID:', docRef.id);
-        showNotification('Entry saved successfully!');
+        showNotification('Loading...');
         return docRef.id;
     } catch (error) {
         console.error('Error saving entry:', error);
-        console.error('Error code:', error.code);
-        console.error('Error message:', error.message);
-        showNotification('Error saving entry to cloud: ' + error.message, true);
+        showNotification('Error saving entry to cloud', true);
         throw error;
     }
 }
@@ -179,7 +167,7 @@ async function updateEntryInFirestore(firestoreId, updatedData) {
         const docRef = doc(entriesCollectionRef, firestoreId);
         const updateData = {
             ...updatedData,
-            lastModified: Timestamp.now(),
+            lastModified: serverTimestamp(),
             userId: userId
         };
         
@@ -203,7 +191,7 @@ async function moveEntryToTrash(firestoreId) {
         const docRef = doc(entriesCollectionRef, firestoreId);
         await updateDoc(docRef, {
             deleted: true,
-            deletedDate: Timestamp.now(),
+            deletedDate: serverTimestamp(),
             userId: userId
         });
         return true;

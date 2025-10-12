@@ -2,41 +2,10 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>New Entry - My Journal</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/themes.css">
     <script src="../firebase-config.js"></script>
-    <style>
-        /* Additional theme switcher button styles */
-        .theme-buttons {
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-            margin-top: 0.5rem;
-        }
-
-        .theme-btn {
-            padding: 0.5rem 1rem;
-            border: 1px solid var(--color-accent);
-            border-radius: var(--border-radius-card);
-            background-color: var(--color-secondary-bg);
-            cursor: pointer;
-            font-weight: 700;
-            transition: all 0.2s ease;
-            font-family: var(--font-family-primary);
-            font-size: 0.9rem;
-        }
-
-        .theme-btn:hover {
-            background-color: var(--color-accent);
-        }
-
-        .theme-btn.active {
-            background-color: var(--color-accent);
-            border-width: 2px;
-        }
-    </style>
 </head>
 <body>
     <div class="container">
@@ -84,24 +53,21 @@
         </footer>
     </div>
 
-    <!-- Load main.js first to initialize journalApp -->
     <script src="js/main.js" type="module"></script>
-    <!-- Then load new-entry.js -->
-    <script src="js/new-entry.js"></script>
-    
+    <script src="js/new-entry.js" type="module"></script>
     <!-- Theme Switcher -->
-    <div class="theme-switcher">
-        <h4>🎨 Themes</h4>
-        <div class="theme-buttons">
-            <button class="theme-btn active" data-theme="default">Peach</button>
-            <button class="theme-btn" data-theme="matcha">Matcha</button>
-            <button class="theme-btn" data-theme="cafe">Cafe</button>
-            <button class="theme-btn" data-theme="saltwater">Saltwater</button>
-            <button class="theme-btn" data-theme="monochrome">Mono</button>
-        </div>
+<div class="theme-switcher">
+    <h4>🎨 Themes</h4>
+    <div class="theme-buttons">
+        <button class="theme-btn active" data-theme="default">Peach</button>
+        <button class="theme-btn" data-theme="matcha">Matcha</button>
+        <button class="theme-btn" data-theme="cafe">Cafe</button>
+        <button class="theme-btn" data-theme="saltwater">Saltwater</button>
+        <button class="theme-btn" data-theme="monochrome">Mono</button>
     </div>
+</div>
 
-    <script src="js/theme-switcher.js"></script>
-    <script>setupThemeSwitcher();</script>
+<script src="js/theme-switcher.js"></script>
+<script>setupThemeSwitcher();</script>
 </body>
 </html>
