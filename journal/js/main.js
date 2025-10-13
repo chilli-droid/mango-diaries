@@ -9,7 +9,8 @@ import {
     query, 
     orderBy,
     serverTimestamp,
-    enableIndexedDbPersistence
+    enableIndexedDbPersistence,
+    Timestamp
 } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
@@ -68,7 +69,8 @@ function initializeFirestore() {
         return;
     }
     
-    // Enable offline persistence
+    // Enable offline persistence (optional - you can remove this if you don't need offline support)
+    // Note: This is deprecated but still works. Will be replaced in future Firebase versions.
     enableIndexedDbPersistence(db).catch((err) => {
         if (err.code == 'failed-precondition') {
             console.warn('Multiple tabs open, persistence can only be enabled in one tab at a time.');
@@ -144,19 +146,30 @@ async function saveEntryToFirestore(entryData) {
     }
 
     try {
+        // Create document data with current timestamp
+        const now = Timestamp.now();
         const docData = {
-            ...entryData,
-            date: serverTimestamp(),
+            title: entryData.title,
+            content: entryData.content,
+            tags: entryData.tags || [],
+            videoLink: entryData.videoLink || null,
+            mediaData: entryData.mediaData || null,
+            deleted: false,
+            date: now,
             userId: userId,
-            lastModified: serverTimestamp()
+            lastModified: now
         };
         
+        console.log('Attempting to save entry:', docData);
         const docRef = await addDoc(entriesCollectionRef, docData);
-        showNotification('Loading...');
+        console.log('Entry saved with ID:', docRef.id);
+        showNotification('Entry saved successfully!');
         return docRef.id;
     } catch (error) {
         console.error('Error saving entry:', error);
-        showNotification('Error saving entry to cloud', true);
+        console.error('Error code:', error.code);
+        console.error('Error message:', error.message);
+        showNotification('Error saving entry to cloud: ' + error.message, true);
         throw error;
     }
 }
@@ -167,7 +180,7 @@ async function updateEntryInFirestore(firestoreId, updatedData) {
         const docRef = doc(entriesCollectionRef, firestoreId);
         const updateData = {
             ...updatedData,
-            lastModified: serverTimestamp(),
+            lastModified: Timestamp.now(),
             userId: userId
         };
         
@@ -191,7 +204,7 @@ async function moveEntryToTrash(firestoreId) {
         const docRef = doc(entriesCollectionRef, firestoreId);
         await updateDoc(docRef, {
             deleted: true,
-            deletedDate: serverTimestamp(),
+            deletedDate: Timestamp.now(),
             userId: userId
         });
         return true;

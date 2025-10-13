@@ -1,170 +1,263 @@
-document.getElementById('entryForm').addEventListener('submit', async function(e) {
-    e.preventDefault();
-    
-    const title = document.getElementById('entryTitle').value;
-    const tags = document.getElementById('entryTags').value
-        .split(' ')
-        .filter(tag => tag.startsWith('#'))
-        .map(tag => tag.trim());
-    const content = document.getElementById('entryContent').value;
-    const videoLink = document.getElementById('entryVideoLink')?.value.trim() || '';
-
-    const mediaFiles = {
-        image: document.getElementById('entryImage').files[0],
-        audio: document.getElementById('entryAudio').files[0]
-    };
-
-    try {
-        await handleMediaUpload(title, tags, content, mediaFiles, videoLink);
-    } catch (error) {
-        journalApp.showNotification('Error saving entry: ' + error.message, true);
-    }
-});
-
-async function handleMediaUpload(title, tags, content, mediaFiles, videoLink) {
-    let mediaData = null;
-
-    if (mediaFiles.image || mediaFiles.audio) {
-        const file = mediaFiles.image || mediaFiles.audio;
-        const type = mediaFiles.image ? 'image' : 'audio';
-
-        if (file.size > journalApp.MAX_FILE_SIZE) {
-            if (type === 'image') {
-                mediaData = {
-                    type: 'image',
-                    data: await journalApp.compressImage(file)
-                };
-            } else {
-                throw new Error('Audio file too large (max 5MB)');
-            }
+// Wait for journalApp to be initialized
+function waitForJournalApp() {
+    return new Promise((resolve) => {
+        if (window.journalApp) {
+            resolve();
         } else {
-            const reader = new FileReader();
-            mediaData = await new Promise((resolve, reject) => {
-                reader.onload = e => resolve({
-                    type: type,
-                    data: e.target.result
-                });
-                reader.onerror = () => reject(new Error('Failed to read file'));
-                reader.readAsDataURL(file);
-            });
-        }
-    }
-
-    await saveEntry(title, tags, content, mediaData, videoLink);
-}
-
-// Set up media preview handlers
-const imageInput = document.getElementById('entryImage');
-const imagePreview = document.getElementById('imagePreview');
-
-imageInput.addEventListener('change', async function(e) {
-    const file = e.target.files[0];
-    if (!file) {
-        imagePreview.style.display = 'none';
-        return;
-    }
-
-    if (file.size > journalApp.MAX_FILE_SIZE) {
-        try {
-            imagePreview.src = await journalApp.compressImage(file);
-            imagePreview.style.display = 'block';
-        } catch (error) {
-            journalApp.showNotification('Error compressing image', true);
-            this.value = '';
-        }
-        return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        imagePreview.src = e.target.result;
-        imagePreview.style.display = 'block';
-    };
-    reader.readAsDataURL(file);
-});
-
-const audioInput = document.getElementById('entryAudio');
-const audioPreview = document.getElementById('audioPreview');
-
-audioInput.addEventListener('change', function(e) {
-    const file = e.target.files[0];
-    if (!file) {
-        audioPreview.style.display = 'none';
-        return;
-    }
-
-    if (file.size > journalApp.MAX_FILE_SIZE) {
-        journalApp.showNotification('Audio file too large (max 5MB)', true);
-        this.value = '';
-        return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        audioPreview.src = e.target.result;
-        audioPreview.style.display = 'block';
-    };
-    reader.readAsDataURL(file);
-});
-
-// Video link preview
-const videoLinkInput = document.getElementById('entryVideoLink');
-const videoPreview = document.getElementById('videoPreview');
-
-if (videoLinkInput) {
-    videoLinkInput.addEventListener('input', function() {
-        const link = this.value.trim();
-        if (link) {
-            // Extract video ID from YouTube links
-            let videoId = '';
-            if (link.includes('youtube.com/watch?v=')) {
-                videoId = link.split('v=')[1]?.split('&')[0];
-            } else if (link.includes('youtu.be/')) {
-                videoId = link.split('youtu.be/')[1]?.split('?')[0];
-            }
-
-            if (videoId) {
-                videoPreview.src = `https://www.youtube.com/embed/${videoId}`;
-                videoPreview.style.display = 'block';
-            } else if (link.includes('drive.google.com')) {
-                videoPreview.style.display = 'none';
-                journalApp.showNotification('Google Drive link added (preview not available)');
-            } else {
-                videoPreview.style.display = 'none';
-            }
-        } else {
-            videoPreview.style.display = 'none';
+            const checkInterval = setInterval(() => {
+                if (window.journalApp) {
+                    clearInterval(checkInterval);
+                    resolve();
+                }
+            }, 100);
         }
     });
 }
 
-async function saveEntry(title, tags, content, mediaData, videoLink) {
-    const entryData = {
-        id: Date.now(),
-        title,
-        tags,
-        content,
-        mediaData,
-        videoLink: videoLink || null,
-        deleted: false
-    };
+// Initialize when DOM is loaded
+document.addEventListener('DOMContentLoaded', async function() {
+    console.log('new-entry.js: DOM loaded');
+    
+    // Wait for journalApp to be available
+    await waitForJournalApp();
+    console.log('new-entry.js: journalApp is ready');
+    
+    // Set up form submission
+    const entryForm = document.getElementById('entryForm');
+    if (entryForm) {
+        entryForm.addEventListener('submit', handleFormSubmit);
+        console.log('new-entry.js: Form listener attached');
+    } else {
+        console.error('new-entry.js: Entry form not found!');
+    }
+    
+    // Set up media previews
+    setupMediaPreviews();
+});
 
+// Handle form submission
+async function handleFormSubmit(e) {
+    e.preventDefault();
+    console.log('Form submitted!');
+    
+    const title = document.getElementById('entryTitle').value.trim();
+    const content = document.getElementById('entryContent').value.trim();
+    const tagsInput = document.getElementById('entryTags').value;
+    const videoLink = document.getElementById('entryVideoLink').value.trim() || null;
+    
+    console.log('Form data:', { title, content, tagsInput, videoLink });
+    
+    // Validate inputs
+    if (!title) {
+        window.journalApp.showNotification('Please enter a title', true);
+        return;
+    }
+    
+    if (!content) {
+        window.journalApp.showNotification('Please enter some content', true);
+        return;
+    }
+    
+    // Parse tags
+    const tags = tagsInput
+        .split(' ')
+        .filter(tag => tag.startsWith('#'))
+        .map(tag => tag.trim());
+    
+    console.log('Parsed tags:', tags);
+    
+    // Disable submit button to prevent double submission
+    const submitButton = e.target.querySelector('button[type="submit"]');
+    submitButton.disabled = true;
+    submitButton.textContent = 'Saving...';
+    
+    // Handle media files
+    let mediaData = null;
+    const imageFile = document.getElementById('entryImage').files[0];
+    const audioFile = document.getElementById('entryAudio').files[0];
+    
     try {
-        await journalApp.saveEntryToFirestore(entryData);
-        journalApp.showNotification('Entry saved successfully!');
-        resetForm();
+        if (imageFile) {
+            console.log('Processing image file:', imageFile.name);
+            // Check file size
+            if (imageFile.size > window.journalApp.MAX_FILE_SIZE) {
+                window.journalApp.showNotification('Image file is too large. Maximum size is 5MB.', true);
+                submitButton.disabled = false;
+                submitButton.textContent = 'Save Entry';
+                return;
+            }
+            
+            // Compress and store image
+            const compressedImage = await window.journalApp.compressImage(imageFile);
+            mediaData = {
+                type: 'image',
+                data: compressedImage
+            };
+            console.log('Image compressed successfully');
+        } else if (audioFile) {
+            console.log('Processing audio file:', audioFile.name);
+            // Check file size
+            if (audioFile.size > window.journalApp.MAX_FILE_SIZE) {
+                window.journalApp.showNotification('Audio file is too large. Maximum size is 5MB.', true);
+                submitButton.disabled = false;
+                submitButton.textContent = 'Save Entry';
+                return;
+            }
+            
+            // Read audio file
+            const audioData = await readFileAsDataURL(audioFile);
+            mediaData = {
+                type: 'audio',
+                data: audioData
+            };
+            console.log('Audio file processed successfully');
+        }
+        
+        // Create entry data object
+        const entryData = {
+            title: title,
+            content: content,
+            tags: tags,
+            videoLink: videoLink,
+            mediaData: mediaData,
+            deleted: false
+        };
+        
+        console.log('Entry data prepared (without media data for logging):', {
+            title: entryData.title,
+            content: entryData.content,
+            tags: entryData.tags,
+            videoLink: entryData.videoLink,
+            hasMedia: !!entryData.mediaData
+        });
+        
+        console.log('Calling saveEntryToFirestore...');
+        // Save to Firestore
+        const entryId = await window.journalApp.saveEntryToFirestore(entryData);
+        console.log('Entry saved with ID:', entryId);
+        
+        // Show success message
+        window.journalApp.showNotification('Entry saved successfully!');
+        
+        // Redirect to entries page after a short delay
         setTimeout(() => {
             window.location.href = 'entries.html';
         }, 1500);
+        
     } catch (error) {
-        console.error('Error saving entry:', error);
-        journalApp.showNotification('Error saving entry to cloud', true);
+        console.error('Error in handleFormSubmit:', error);
+        console.error('Error details:', error.message, error.code);
+        window.journalApp.showNotification('Error saving entry: ' + error.message, true);
+        
+        // Re-enable submit button
+        submitButton.disabled = false;
+        submitButton.textContent = 'Save Entry';
     }
 }
 
-function resetForm() {
-    document.getElementById('entryForm').reset();
-    imagePreview.style.display = 'none';
-    audioPreview.style.display = 'none';
-    if (videoPreview) videoPreview.style.display = 'none';
+// Helper function to read file as data URL
+function readFileAsDataURL(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target.result);
+        reader.onerror = (e) => reject(new Error('Failed to read file'));
+        reader.readAsDataURL(file);
+    });
+}
+
+// Set up media preview functionality
+function setupMediaPreviews() {
+    const imageInput = document.getElementById('entryImage');
+    const audioInput = document.getElementById('entryAudio');
+    const videoInput = document.getElementById('entryVideoLink');
+    const imagePreview = document.getElementById('imagePreview');
+    const audioPreview = document.getElementById('audioPreview');
+    const videoPreview = document.getElementById('videoPreview');
+    
+    // Image preview
+    if (imageInput) {
+        imageInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    imagePreview.src = event.target.result;
+                    imagePreview.style.display = 'block';
+                    // Hide other previews
+                    if (audioPreview) audioPreview.style.display = 'none';
+                    if (videoPreview) videoPreview.style.display = 'none';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+    
+    // Audio preview
+    if (audioInput) {
+        audioInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    audioPreview.src = event.target.result;
+                    audioPreview.style.display = 'block';
+                    // Hide other previews
+                    if (imagePreview) imagePreview.style.display = 'none';
+                    if (videoPreview) videoPreview.style.display = 'none';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+    
+    // Video preview
+    if (videoInput) {
+        videoInput.addEventListener('input', function(e) {
+            const videoLink = e.target.value.trim();
+            if (videoLink) {
+                const embedUrl = getVideoEmbedUrl(videoLink);
+                if (embedUrl) {
+                    videoPreview.src = embedUrl;
+                    videoPreview.style.display = 'block';
+                    // Hide other previews
+                    if (imagePreview) imagePreview.style.display = 'none';
+                    if (audioPreview) audioPreview.style.display = 'none';
+                } else {
+                    videoPreview.style.display = 'none';
+                }
+            } else {
+                videoPreview.style.display = 'none';
+            }
+        });
+    }
+}
+
+// Get video embed URL
+function getVideoEmbedUrl(url) {
+    try {
+        // YouTube
+        if (url.includes('youtube.com/watch?v=')) {
+            const videoId = new URL(url).searchParams.get('v');
+            if (videoId) {
+                return `https://www.youtube.com/embed/${videoId}`;
+            }
+        } else if (url.includes('youtu.be/')) {
+            const videoId = url.split('youtu.be/')[1]?.split('?')[0];
+            if (videoId) {
+                return `https://www.youtube.com/embed/${videoId}`;
+            }
+        }
+        // Google Drive
+        else if (url.includes('drive.google.com')) {
+            if (url.includes('/file/d/')) {
+                const fileId = url.split('/file/d/')[1]?.split('/')[0];
+                if (fileId) {
+                    return `https://drive.google.com/file/d/${fileId}/preview`;
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Error parsing video URL:', error);
+    }
+    return null;
 }
