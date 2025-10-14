@@ -99,9 +99,20 @@ function setupRealtimeListener() {
         
         snapshot.forEach((doc) => {
             const entryData = doc.data();
+            
+            // Reconstruct mediaData object from flattened fields
+            let mediaData = null;
+            if (entryData.mediaType && entryData.mediaUrl) {
+                mediaData = {
+                    type: entryData.mediaType,
+                    data: entryData.mediaUrl
+                };
+            }
+            
             journalApp.entries.push({
                 firestoreId: doc.id,
                 ...entryData,
+                mediaData: mediaData, // Add reconstructed mediaData
                 // Convert Firestore timestamps back to ISO strings if needed
                 date: entryData.date?.toDate ? entryData.date.toDate().toISOString() : entryData.date,
                 lastModified: entryData.lastModified?.toDate ? entryData.lastModified.toDate().toISOString() : entryData.lastModified,
@@ -148,19 +159,29 @@ async function saveEntryToFirestore(entryData) {
     try {
         // Create document data with current timestamp
         const now = Timestamp.now();
-        const docData = {
+        
+        // Flatten mediaData to avoid nested object issues
+        let docData = {
             title: entryData.title,
             content: entryData.content,
             tags: entryData.tags || [],
             videoLink: entryData.videoLink || null,
-            mediaData: entryData.mediaData || null,
             deleted: false,
             date: now,
             userId: userId,
             lastModified: now
         };
         
-        console.log('Attempting to save entry:', docData);
+        // Add media data as separate fields if it exists
+        if (entryData.mediaData) {
+            docData.mediaType = entryData.mediaData.type || null;
+            docData.mediaUrl = entryData.mediaData.data || null;
+        } else {
+            docData.mediaType = null;
+            docData.mediaUrl = null;
+        }
+        
+        console.log('Attempting to save entry (media data flattened)');
         const docRef = await addDoc(entriesCollectionRef, docData);
         console.log('Entry saved with ID:', docRef.id);
         showNotification('Entry saved successfully!');
