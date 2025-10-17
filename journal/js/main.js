@@ -158,11 +158,13 @@ function setupRealtimeListener() {
     });
 }
 
-// Save new entry to Firestore
+// Save new entry to Firestore - SIMPLIFIED VERSION
 async function saveEntryToFirestore(entryData) {
-    if (!await checkAuth()) return;
+    if (!await checkAuth()) {
+        throw new Error('Not authenticated');
+    }
 
-    // Validate entry data
+    // Basic validation
     if (!entryData.title?.trim()) {
         throw new Error('Title is required');
     }
@@ -170,61 +172,59 @@ async function saveEntryToFirestore(entryData) {
         throw new Error('Content is required');
     }
 
-    // Validate video link if present
-    if (entryData.videoLink) {
-        const validVideoUrl = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be|drive\.google\.com).+$/;
-        if (!validVideoUrl.test(entryData.videoLink)) {
-            throw new Error('Invalid video URL. Only YouTube and Google Drive links are supported.');
-        }
-    }
-
     try {
         const now = Timestamp.now();
         
-        // Flatten mediaData to avoid nested object issues
-        let docData = {
-            title: entryData.title,
-            content: entryData.content,
+        // Create simple document data without complex media handling first
+        const docData = {
+            title: entryData.title.trim(),
+            content: entryData.content.trim(),
             tags: entryData.tags || [],
             videoLink: entryData.videoLink || null,
             deleted: false,
             date: now,
             userId: userId,
-            lastModified: now,
-            mediaType: null,
-            mediaUrl: null
+            lastModified: now
         };
         
-        // Check if media data exists and validate size
+        // Only add media if it exists and is small enough
         if (entryData.mediaData && entryData.mediaData.data) {
             const dataSize = entryData.mediaData.data.length;
             console.log('Media data size:', Math.round(dataSize / 1024), 'KB');
             
-            if (dataSize > MAX_COMPRESSED_SIZE) {
-                throw new Error(`Image too large after compression (${Math.round(dataSize / 1024)}KB). Please use a smaller image or reduce quality.`);
+            if (dataSize <= MAX_COMPRESSED_SIZE) {
+                docData.mediaType = entryData.mediaData.type;
+                docData.mediaUrl = entryData.mediaData.data;
+            } else {
+                console.warn('Media too large, skipping:', dataSize, 'bytes');
+                showNotification('Media file was too large and was not saved', true);
             }
-            
-            docData.mediaType = entryData.mediaData.type;
-            docData.mediaUrl = entryData.mediaData.data;
         }
         
-        console.log('Attempting to save entry to Firestore');
+        console.log('Saving entry to Firestore:', {
+            title: docData.title,
+            contentLength: docData.content.length,
+            hasMedia: !!docData.mediaType,
+            tags: docData.tags.length
+        });
+        
         const docRef = await addDoc(entriesCollectionRef, docData);
-        console.log('Entry saved with ID:', docRef.id);
+        console.log('✅ Entry saved successfully with ID:', docRef.id);
         showNotification('Entry saved successfully!');
         return docRef.id;
-    } catch (error) {
-        console.error('Error saving entry:', error);
-        console.error('Error code:', error.code);
-        console.error('Error message:', error.message);
         
-        let errorMessage = 'Error saving entry. Please try again.';
-        if (error.code === 'invalid-argument') {
-            errorMessage = 'Entry data is too large. Try using a smaller image or remove the image.';
-        } else if (error.code === 'permission-denied') {
-            errorMessage = 'Permission denied. Please check your Firestore security rules.';
-        } else if (error.message.includes('network') || error.code === 'unavailable') {
+    } catch (error) {
+        console.error('❌ Error saving entry:', error);
+        console.error('Error details:', error.code, error.message);
+        
+        let errorMessage = 'Failed to save entry. Please try again.';
+        
+        if (error.code === 'permission-denied') {
+            errorMessage = 'Permission denied. Please check if you are signed in.';
+        } else if (error.code === 'unavailable') {
             errorMessage = 'Network error. Please check your internet connection.';
+        } else if (error.message.includes('quota')) {
+            errorMessage = 'Storage quota exceeded. Please try with a smaller image.';
         }
         
         showNotification(errorMessage, true);
@@ -238,8 +238,7 @@ async function updateEntryInFirestore(firestoreId, updatedData) {
         const docRef = doc(entriesCollectionRef, firestoreId);
         const updateData = {
             ...updatedData,
-            lastModified: Timestamp.now(),
-            userId: userId
+            lastModified: Timestamp.now()
         };
         
         await updateDoc(docRef, updateData);
@@ -262,8 +261,7 @@ async function moveEntryToTrash(firestoreId) {
         const docRef = doc(entriesCollectionRef, firestoreId);
         await updateDoc(docRef, {
             deleted: true,
-            deletedDate: Timestamp.now(),
-            userId: userId
+            deletedDate: Timestamp.now()
         });
         showNotification('Entry moved to trash');
         return true;
@@ -280,8 +278,7 @@ async function restoreEntryFromTrash(firestoreId) {
         const docRef = doc(entriesCollectionRef, firestoreId);
         await updateDoc(docRef, {
             deleted: false,
-            deletedDate: null,
-            userId: userId
+            deletedDate: null
         });
         showNotification('Entry restored');
         return true;
@@ -306,11 +303,17 @@ async function deleteEntryPermanently(firestoreId) {
     }
 }
 
-// Improved image compression with size validation
+// Improved image compression with better error handling
 function compressImage(file, maxSizeKB = 800) {
     return new Promise((resolve, reject) => {
-        if (!file.type.startsWith('image/')) {
-            reject(new Error('File must be an image'));
+        if (!file || !file.type.startsWith('image/')) {
+            reject(new Error('Please select a valid image file'));
+            return;
+        }
+
+        // Check file size first
+        if (file.size > MAX_FILE_SIZE) {
+            reject(new Error(`Image is too large (${Math.round(file.size / 1024 / 1024)}MB). Maximum size is 5MB.`));
             return;
         }
 
@@ -322,10 +325,10 @@ function compressImage(file, maxSizeKB = 800) {
                 let width = img.width;
                 let height = img.height;
 
-                // Calculate new dimensions (max 800px width)
-                const maxWidth = 800;
+                // Calculate new dimensions (max 1200px width for better quality)
+                const maxWidth = 1200;
                 if (width > maxWidth) {
-                    height = height * (maxWidth / width);
+                    height = Math.round(height * (maxWidth / width));
                     width = maxWidth;
                 }
 
@@ -333,29 +336,38 @@ function compressImage(file, maxSizeKB = 800) {
                 canvas.height = height;
 
                 const ctx = canvas.getContext('2d');
+                
+                // Improve image quality
+                ctx.imageSmoothingEnabled = true;
+                ctx.imageSmoothingQuality = 'high';
+                
                 ctx.drawImage(img, 0, 0, width, height);
 
-                // Try different quality levels to get under size limit
-                let quality = 0.7;
+                // Start with higher quality and reduce if needed
+                let quality = 0.8;
                 let dataUrl = canvas.toDataURL('image/jpeg', quality);
                 
-                // If still too large, reduce quality further
-                while (dataUrl.length > maxSizeKB * 1024 && quality > 0.1) {
+                // If still too large, reduce quality gradually
+                let attempts = 0;
+                while (dataUrl.length > maxSizeKB * 1024 && quality > 0.3 && attempts < 5) {
                     quality -= 0.1;
                     dataUrl = canvas.toDataURL('image/jpeg', quality);
+                    attempts++;
                 }
 
+                const finalSizeKB = Math.round(dataUrl.length / 1024);
+                console.log(`Image compressed to ${finalSizeKB}KB at quality ${quality.toFixed(1)}`);
+
                 if (dataUrl.length > maxSizeKB * 1024) {
-                    reject(new Error(`Unable to compress image below ${maxSizeKB}KB. Please use a smaller image.`));
+                    reject(new Error(`Image is too large after compression (${finalSizeKB}KB). Please use a smaller image.`));
                 } else {
-                    console.log(`Image compressed to ${Math.round(dataUrl.length / 1024)}KB at quality ${quality.toFixed(1)}`);
                     resolve(dataUrl);
                 }
             };
-            img.onerror = () => reject(new Error('Failed to load image'));
+            img.onerror = () => reject(new Error('Failed to process the image'));
             img.src = e.target.result;
         };
-        reader.onerror = () => reject(new Error('Failed to read file'));
+        reader.onerror = () => reject(new Error('Failed to read the image file'));
         reader.readAsDataURL(file);
     });
 }
@@ -369,6 +381,7 @@ function sortEntries(entries, sortBy = 'newest') {
 }
 
 function showNotification(message, isError = false) {
+    // Create notification container if it doesn't exist
     let container = document.querySelector('.notifications-container');
     if (!container) {
         container = document.createElement('div');
@@ -383,13 +396,19 @@ function showNotification(message, isError = false) {
     
     container.appendChild(notification);
     
+    // Animate in
     requestAnimationFrame(() => {
         notification.classList.add('show');
     });
 
+    // Auto remove after delay
     setTimeout(() => {
         notification.classList.remove('show');
-        setTimeout(() => notification.remove(), 300);
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.remove();
+            }
+        }, 300);
     }, 4000);
 }
 
