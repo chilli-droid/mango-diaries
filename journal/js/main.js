@@ -33,17 +33,23 @@ function initializeFirebase() {
     let firebaseConfig;
     
     if (typeof __firebase_config !== 'undefined') {
-        firebaseConfig = JSON.parse(__firebase_config);
-        console.log('Firebase config loaded from __firebase_config');
+        try {
+            firebaseConfig = JSON.parse(__firebase_config);
+            console.log('Firebase config loaded from __firebase_config');
+        } catch (error) {
+            console.error('Error parsing Firebase config:', error);
+            showNotification('System configuration error. Please try again later.', true);
+            return false;
+        }
     } else {
         console.error('Firebase configuration is missing.');
-        showNotification('Firebase configuration missing. Please check setup.', true);
+        showNotification('System configuration missing. Please try again later.', true);
         return false;
     }
 
     if (Object.keys(firebaseConfig).length === 0) {
         console.error('Firebase configuration is empty.');
-        showNotification('Firebase configuration missing. Please check setup.', true);
+        showNotification('System configuration error. Please try again later.', true);
         return false;
     }
 
@@ -72,7 +78,7 @@ function initializeFirebase() {
         return true;
     } catch (error) {
         console.error('Firebase initialization error:', error);
-        showNotification('Error initializing Firebase: ' + error.message, true);
+        showNotification('System initialization error. Please try again later.', true);
         return false;
     }
 }
@@ -148,7 +154,7 @@ function setupRealtimeListener() {
         }
     }, (error) => {
         console.error('Error in real-time listener:', error);
-        showNotification('Error loading entries from cloud', true);
+        showNotification('Error loading entries. Please check your connection.', true);
     });
 }
 
@@ -212,12 +218,16 @@ async function saveEntryToFirestore(entryData) {
         console.error('Error code:', error.code);
         console.error('Error message:', error.message);
         
-        let errorMessage = error.message;
+        let errorMessage = 'Error saving entry. Please try again.';
         if (error.code === 'invalid-argument') {
             errorMessage = 'Entry data is too large. Try using a smaller image or remove the image.';
+        } else if (error.code === 'permission-denied') {
+            errorMessage = 'Permission denied. Please check your Firestore security rules.';
+        } else if (error.message.includes('network') || error.code === 'unavailable') {
+            errorMessage = 'Network error. Please check your internet connection.';
         }
         
-        showNotification('Error saving entry: ' + errorMessage, true);
+        showNotification(errorMessage, true);
         throw error;
     }
 }
@@ -237,7 +247,7 @@ async function updateEntryInFirestore(firestoreId, updatedData) {
         return true;
     } catch (error) {
         console.error('Error updating entry:', error);
-        showNotification('Error updating entry', true);
+        showNotification('Error updating entry. Please try again.', true);
         throw error;
     }
 }
@@ -259,6 +269,7 @@ async function moveEntryToTrash(firestoreId) {
         return true;
     } catch (error) {
         console.error('Error moving entry to trash:', error);
+        showNotification('Error moving entry to trash. Please try again.', true);
         throw error;
     }
 }
@@ -276,7 +287,7 @@ async function restoreEntryFromTrash(firestoreId) {
         return true;
     } catch (error) {
         console.error('Error restoring entry:', error);
-        showNotification('Error restoring entry', true);
+        showNotification('Error restoring entry. Please try again.', true);
         throw error;
     }
 }
@@ -290,7 +301,7 @@ async function deleteEntryPermanently(firestoreId) {
         return true;
     } catch (error) {
         console.error('Error permanently deleting entry:', error);
-        showNotification('Error deleting entry', true);
+        showNotification('Error deleting entry. Please try again.', true);
         throw error;
     }
 }

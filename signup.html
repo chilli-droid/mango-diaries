@@ -97,7 +97,7 @@
                         submitBtn.disabled = false;
                         submitBtn.textContent = 'Sign Up';
                         
-                        let msg = "An unknown error occurred.";
+                        let msg = "An error occurred. Please try again.";
                         switch (error.code) {
                             case 'auth/email-already-in-use':
                                 msg = 'This email is already registered. Please sign in instead.';
@@ -111,16 +111,19 @@
                             case 'auth/operation-not-allowed':
                                 msg = 'Email/password accounts are not enabled. Please contact support.';
                                 break;
+                            case 'auth/network-request-failed':
+                                msg = 'Network error. Please check your connection.';
+                                break;
                         }
                         showMessage(msg, true);
                     }
                 });
             }).catch((error) => {
                 console.error("Persistence error:", error);
-                showMessage("Authentication setup failed", true);
+                showMessage("Authentication setup failed. Please try again.", true);
             });
         } else {
-            showMessage("System Error: Firebase config missing.", true);
+            showMessage("System configuration error. Please try again later.", true);
         }
     </script>
 </body>

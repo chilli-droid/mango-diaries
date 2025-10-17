@@ -73,10 +73,15 @@ a:hover {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
 }
 
 .topbar h1 {
     font-size: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
 }
 
 .topbar a {
@@ -220,12 +225,40 @@ input:focus {
     border-radius: 50%;
     overflow: hidden;
     border: 3px solid var(--color-accent);
+    position: relative;
 }
 
 .profile-picture img {
     width: 100%;
     height: 100%;
     object-fit: cover;
+}
+
+.profile-pic-label {
+    cursor: pointer;
+    display: block;
+    position: relative;
+}
+
+.profile-pic-label .overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.profile-pic-label:hover .overlay {
+    opacity: 1;
 }
 
 .profile-section h2 {
@@ -251,7 +284,7 @@ input:focus {
 /* --- New CSS for System Messages --- */
 #messageBox {
     position: fixed;
-    bottom: 20px;  /* Changed from top to bottom */
+    bottom: 20px;
     right: 20px;
     background-color: #ffe0b2;
     color: var(--color-text-dark);
@@ -260,10 +293,11 @@ input:focus {
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     font-size: 0.9rem;
     font-weight: 700;
-    z-index: 100;  /* Reduced z-index */
+    z-index: 100;
     opacity: 0;
     transition: opacity 0.3s ease-in-out;
-    pointer-events: none;  /* Added to prevent interaction with the message box */
+    pointer-events: none;
+    max-width: 300px;
 }
 
 #messageBox.show {
@@ -271,10 +305,11 @@ input:focus {
 }
 
 .error {
-    background-color: #ffcccc !important; /* Red for errors */
+    background-color: #ffcccc !important;
+    color: #721c24 !important;
 }
 
-/* Logo Header Styles - Add to frontend-style.css */
+/* Logo Header Styles */
 .topbar h1 {
     display: flex;
     align-items: center;
@@ -323,4 +358,125 @@ input:focus {
 .nugget-helper p {
     margin: 0;
     color: var(--color-text-dark);
+}
+
+/* Mobile Responsive Styles */
+@media (max-width: 768px) {
+    .container {
+        width: 95%;
+        padding: var(--spacing-sm) 0;
+    }
+
+    .topbar {
+        padding: var(--spacing-sm);
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+    }
+
+    .topbar h1 {
+        font-size: 1.3rem;
+    }
+
+    .hero-section h2 {
+        font-size: 1.8rem;
+    }
+
+    .grid-menu {
+        grid-template-columns: 1fr;
+        gap: var(--spacing-sm);
+    }
+
+    .grid-item {
+        min-height: 80px;
+        font-size: 1rem;
+    }
+
+    .card {
+        padding: var(--spacing-md);
+        margin-bottom: var(--spacing-md);
+    }
+
+    .form-card {
+        margin: var(--spacing-md) auto;
+        padding: var(--spacing-md);
+    }
+
+    #messageBox {
+        bottom: 10px;
+        right: 10px;
+        left: 10px;
+        max-width: none;
+        font-size: 0.8rem;
+    }
+
+    input[type="text"],
+    input[type="email"],
+    input[type="password"] {
+        padding: 12px;
+        font-size: 16px; /* Prevents zoom on iOS */
+    }
+
+    button, .button-link {
+        padding: 12px 15px;
+        font-size: 16px;
+    }
+}
+
+@media (max-width: 480px) {
+    .hero-section h2 {
+        font-size: 1.5rem;
+    }
+
+    .hero-section p {
+        font-size: 1rem;
+    }
+
+    .topbar h1 {
+        font-size: 1.2rem;
+    }
+
+    .card {
+        padding: var(--spacing-sm);
+    }
+
+    .profile-picture {
+        width: 80px;
+        height: 80px;
+    }
+}
+
+/* Loading states */
+.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+/* Focus styles for accessibility */
+button:focus,
+input:focus,
+a:focus {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+}
+
+/* High contrast support */
+@media (prefers-contrast: high) {
+    :root {
+        --color-text-dark: #000000;
+        --color-text-light: #333333;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+    
+    .nugget-mascot {
+        animation: none;
+    }
 }
