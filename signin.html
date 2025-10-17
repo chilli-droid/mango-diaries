@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sign In - Mango Diaries</title>
     <link rel="stylesheet" href="frontend-style.css">
-    <script src="firebase-config.js"></script>
 </head>
 <body>
     <header class="topbar">
@@ -27,11 +26,13 @@
     
     <div id="messageBox"></div>
 
+    <!-- Load Firebase config first -->
+    <script src="firebase-config.js"></script>
+    
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, setPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
         const form = document.getElementById('signInForm');
         const emailInput = document.getElementById('email');
         const passwordInput = document.getElementById('password');
@@ -46,10 +47,70 @@
             setTimeout(() => { box.classList.remove('show'); }, 3000);
         }
 
-        if (Object.keys(firebaseConfig).length > 0) {
-            const app = initializeApp(firebaseConfig);
-            const auth = getAuth(app);
+        // Get Firebase config from global variable
+        function getFirebaseConfig() {
+            // Try multiple ways to get the config
+            if (window.firebaseConfig) {
+                console.log("Using window.firebaseConfig");
+                return window.firebaseConfig;
+            }
             
+            if (window.__firebase_config) {
+                console.log("Using window.__firebase_config");
+                try {
+                    return JSON.parse(window.__firebase_config);
+                } catch (e) {
+                    console.error("Error parsing __firebase_config:", e);
+                }
+            }
+            
+            // Fallback: hardcoded config
+            console.log("Using fallback config");
+            return {
+                apiKey: "AIzaSyB-TDKJTCnIPl4wkQDXZcZvYaadjZuhelk",
+                authDomain: "journal-app-bc5ce.firebaseapp.com",
+                projectId: "journal-app-bc5ce",
+                storageBucket: "journal-app-bc5ce.firebasestorage.app",
+                messagingSenderId: "1019175672379",
+                appId: "1:1019175672379:web:4062780bcc76e552421a1e",
+                measurementId: "G-SFEZDN48R7"
+            };
+        }
+
+        async function initializeAuth() {
+            try {
+                const firebaseConfig = getFirebaseConfig();
+                console.log("Firebase config:", firebaseConfig);
+                
+                if (!firebaseConfig.apiKey) {
+                    throw new Error("Firebase configuration is incomplete");
+                }
+
+                const app = initializeApp(firebaseConfig);
+                const auth = getAuth(app);
+                
+                console.log("Firebase initialized successfully");
+                return auth;
+            } catch (error) {
+                console.error("Firebase initialization failed:", error);
+                showMessage("Authentication service unavailable. Please try again later.", true);
+                return null;
+            }
+        }
+
+        // Initialize when page loads
+        let auth = null;
+        
+        document.addEventListener('DOMContentLoaded', async () => {
+            console.log("Initializing authentication...");
+            auth = await initializeAuth();
+            
+            if (auth) {
+                setupFormHandlers(auth);
+            }
+        });
+
+        function setupFormHandlers(auth) {
             setPersistence(auth, browserSessionPersistence).then(() => {
                 form.addEventListener('submit', async (e) => {
                     e.preventDefault();
@@ -59,6 +120,13 @@
                     
                     const email = emailInput.value;
                     const password = passwordInput.value;
+
+                    if (!email || !password) {
+                        showMessage('Please fill in all fields', true);
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = 'Sign In';
+                        return;
+                    }
 
                     try {
                         showMessage('Signing in...');
@@ -90,16 +158,17 @@
                             case 'auth/network-request-failed':
                                 msg = 'Network error. Please check your connection.';
                                 break;
+                            case 'auth/user-disabled':
+                                msg = 'This account has been disabled.';
+                                break;
                         }
                         showMessage(msg, true);
                     }
                 });
             }).catch((error) => {
                 console.error("Persistence error:", error);
-                showMessage("Authentication setup failed. Please try again.", true);
+                showMessage("Authentication setup failed. Please refresh the page.", true);
             });
-        } else {
-            showMessage("System configuration error. Please try again later.", true);
         }
     </script>
 </body>

@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Mango Diaries</title>
     <link rel="stylesheet" href="frontend-style.css">
-    <script src="firebase-config.js"></script>
 </head>
 <body>
     <header class="topbar">
@@ -28,12 +27,14 @@
     
     <div id="messageBox"></div>
 
+    <!-- Load Firebase config first -->
+    <script src="firebase-config.js"></script>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
         const signOutButton = document.getElementById('signOutButton');
         const welcomeHeader = document.getElementById('welcomeHeader');
 
@@ -46,7 +47,36 @@
             setTimeout(() => { box.classList.remove('show'); }, 3000);
         }
 
-        if (Object.keys(firebaseConfig).length > 0) {
+        // Get Firebase config from global variable
+        function getFirebaseConfig() {
+            if (window.firebaseConfig) {
+                return window.firebaseConfig;
+            }
+            
+            if (window.__firebase_config) {
+                try {
+                    return JSON.parse(window.__firebase_config);
+                } catch (e) {
+                    console.error("Error parsing __firebase_config:", e);
+                }
+            }
+            
+            // Fallback config
+            return {
+                apiKey: "AIzaSyB-TDKJTCnIPl4wkQDXZcZvYaadjZuhelk",
+                authDomain: "journal-app-bc5ce.firebasestorage.app",
+                projectId: "journal-app-bc5ce",
+                storageBucket: "journal-app-bc5ce.firebasestorage.app",
+                messagingSenderId: "1019175672379",
+                appId: "1:1019175672379:web:4062780bcc76e552421a1e",
+                measurementId: "G-SFEZDN48R7"
+            };
+        }
+
+        try {
+            const firebaseConfig = getFirebaseConfig();
+            console.log("Initializing Firebase with config:", firebaseConfig.projectId);
+            
             const app = initializeApp(firebaseConfig);
             const auth = getAuth(app);
             const db = getFirestore(app);
@@ -67,7 +97,7 @@
 
                     welcomeHeader.textContent = `👋 Welcome Back, ${displayName}!`;
                 } else {
-                    showMessage('Access denied. Please sign in.', true);
+                    showMessage('Please sign in to access your journal.', true);
                     setTimeout(() => { window.location.href = 'index.html'; }, 500);
                 }
             });
@@ -83,8 +113,10 @@
                     showMessage(`Logout failed: ${error.message}`, true);
                 }
             });
-        } else {
-            showMessage("System Error: Firebase config missing.", true);
+        } catch (error) {
+            console.error("Firebase initialization error:", error);
+            showMessage("System configuration error. Please try signing in again.", true);
+            setTimeout(() => { window.location.href = 'index.html'; }, 2000);
         }
     </script>
 </body>

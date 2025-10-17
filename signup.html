@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sign Up - Mango Diaries</title>
     <link rel="stylesheet" href="frontend-style.css">
-    <script src="firebase-config.js"></script>
 </head>
 <body>
     <header class="topbar">
@@ -28,12 +27,14 @@
 
     <div id="messageBox"></div>
 
+    <!-- Load Firebase config first -->
+    <script src="firebase-config.js"></script>
+    
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, createUserWithEmailAndPassword, updateProfile, setPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
         const form = document.getElementById('signUpForm');
         const usernameInput = document.getElementById('username');
         const emailInput = document.getElementById('email');
@@ -49,11 +50,71 @@
             setTimeout(() => { box.classList.remove('show'); }, 5000);
         }
 
-        if (Object.keys(firebaseConfig).length > 0) {
-            const app = initializeApp(firebaseConfig);
-            const auth = getAuth(app);
-            const db = getFirestore(app);
+        // Get Firebase config from global variable
+        function getFirebaseConfig() {
+            // Try multiple ways to get the config
+            if (window.firebaseConfig) {
+                console.log("Using window.firebaseConfig");
+                return window.firebaseConfig;
+            }
             
+            if (window.__firebase_config) {
+                console.log("Using window.__firebase_config");
+                try {
+                    return JSON.parse(window.__firebase_config);
+                } catch (e) {
+                    console.error("Error parsing __firebase_config:", e);
+                }
+            }
+            
+            // Fallback: hardcoded config
+            console.log("Using fallback config");
+            return {
+                apiKey: "AIzaSyB-TDKJTCnIPl4wkQDXZcZvYaadjZuhelk",
+                authDomain: "journal-app-bc5ce.firebasestorage.app",
+                projectId: "journal-app-bc5ce",
+                storageBucket: "journal-app-bc5ce.firebasestorage.app",
+                messagingSenderId: "1019175672379",
+                appId: "1:1019175672379:web:4062780bcc76e552421a1e",
+                measurementId: "G-SFEZDN48R7"
+            };
+        }
+
+        async function initializeFirebase() {
+            try {
+                const firebaseConfig = getFirebaseConfig();
+                console.log("Firebase config:", firebaseConfig);
+                
+                if (!firebaseConfig.apiKey) {
+                    throw new Error("Firebase configuration is incomplete");
+                }
+
+                const app = initializeApp(firebaseConfig);
+                const auth = getAuth(app);
+                const db = getFirestore(app);
+                
+                console.log("Firebase initialized successfully");
+                return { app, auth, db };
+            } catch (error) {
+                console.error("Firebase initialization failed:", error);
+                showMessage("Authentication service unavailable. Please try again later.", true);
+                return null;
+            }
+        }
+
+        // Initialize when page loads
+        let firebase = null;
+        
+        document.addEventListener('DOMContentLoaded', async () => {
+            console.log("Initializing Firebase...");
+            firebase = await initializeFirebase();
+            
+            if (firebase) {
+                setupFormHandlers(firebase.auth, firebase.db);
+            }
+        });
+
+        function setupFormHandlers(auth, db) {
             setPersistence(auth, browserSessionPersistence).then(() => {
                 form.addEventListener('submit', async (e) => {
                     e.preventDefault();
@@ -67,6 +128,13 @@
 
                     if (!username) {
                         showMessage('Please enter a username.', true);
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = 'Sign Up';
+                        return;
+                    }
+
+                    if (password.length < 6) {
+                        showMessage('Password must be at least 6 characters.', true);
                         submitBtn.disabled = false;
                         submitBtn.textContent = 'Sign Up';
                         return;
@@ -120,10 +188,8 @@
                 });
             }).catch((error) => {
                 console.error("Persistence error:", error);
-                showMessage("Authentication setup failed. Please try again.", true);
+                showMessage("Authentication setup failed. Please refresh the page.", true);
             });
-        } else {
-            showMessage("System configuration error. Please try again later.", true);
         }
     </script>
 </body>
