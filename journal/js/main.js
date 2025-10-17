@@ -18,20 +18,32 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
 import { getFirestore } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB limit
+const MAX_COMPRESSED_SIZE = 1 * 1024 * 1024; // 1MB for Firestore (Firestore has ~1MB doc limit)
 const APP_VERSION = '0.8';
 
 // Global state
 let entriesCollectionRef;
 let unsubscribeListener;
 let db, userId, appId;
+let firebaseInitialized = false;
 
 // Initialize Firebase and get user info
 function initializeFirebase() {
-    const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+    // Try to get config from parent directory or current directory
+    let firebaseConfig;
     
-    if (Object.keys(firebaseConfig).length === 0) {
+    if (typeof __firebase_config !== 'undefined') {
+        firebaseConfig = JSON.parse(__firebase_config);
+        console.log('Firebase config loaded from __firebase_config');
+    } else {
         console.error('Firebase configuration is missing.');
-        showNotification('Firebase configuration missing. Please check setup.');
+        showNotification('Firebase configuration missing. Please check setup.', true);
+        return false;
+    }
+
+    if (Object.keys(firebaseConfig).length === 0) {
+        console.error('Firebase configuration is empty.');
+        showNotification('Firebase configuration missing. Please check setup.', true);
         return false;
     }
 
@@ -39,11 +51,14 @@ function initializeFirebase() {
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         db = getFirestore(app);
+        firebaseInitialized = true;
+        console.log('Firebase initialized successfully');
 
         onAuthStateChanged(auth, (user) => {
             if (user && !user.isAnonymous) {
                 userId = user.uid;
-                appId = 'journal-app'; // Default app ID
+                appId = 'journal-app';
+                console.log('User authenticated:', userId);
                 initializeFirestore();
             } else {
                 console.warn('User not authenticated. Redirecting to landing page.');
@@ -69,8 +84,7 @@ function initializeFirestore() {
         return;
     }
     
-    // Enable offline persistence (optional - you can remove this if you don't need offline support)
-    // Note: This is deprecated but still works. Will be replaced in future Firebase versions.
+    // Enable offline persistence
     enableIndexedDbPersistence(db).catch((err) => {
         if (err.code == 'failed-precondition') {
             console.warn('Multiple tabs open, persistence can only be enabled in one tab at a time.');
@@ -81,6 +95,7 @@ function initializeFirestore() {
     
     // Create the secure collection path
     entriesCollectionRef = collection(db, `users/${userId}/journal-entries`);
+    console.log('Firestore collection reference created');
     
     // Set up real-time listener
     setupRealtimeListener();
@@ -89,7 +104,7 @@ function initializeFirestore() {
 // Real-time data listener
 function setupRealtimeListener() {
     if (unsubscribeListener) {
-        unsubscribeListener(); // Clean up existing listener
+        unsubscribeListener();
     }
     
     const q = query(entriesCollectionRef, orderBy('date', 'desc'));
@@ -112,13 +127,14 @@ function setupRealtimeListener() {
             journalApp.entries.push({
                 firestoreId: doc.id,
                 ...entryData,
-                mediaData: mediaData, // Add reconstructed mediaData
-                // Convert Firestore timestamps back to ISO strings if needed
+                mediaData: mediaData,
                 date: entryData.date?.toDate ? entryData.date.toDate().toISOString() : entryData.date,
                 lastModified: entryData.lastModified?.toDate ? entryData.lastModified.toDate().toISOString() : entryData.lastModified,
                 deletedDate: entryData.deletedDate?.toDate ? entryData.deletedDate.toDate().toISOString() : entryData.deletedDate
             });
         });
+        
+        console.log('Entries loaded:', journalApp.entries.length);
         
         // Trigger UI updates if render functions exist
         if (typeof renderEntries === 'function') {
@@ -157,7 +173,6 @@ async function saveEntryToFirestore(entryData) {
     }
 
     try {
-        // Create document data with current timestamp
         const now = Timestamp.now();
         
         // Flatten mediaData to avoid nested object issues
@@ -169,19 +184,25 @@ async function saveEntryToFirestore(entryData) {
             deleted: false,
             date: now,
             userId: userId,
-            lastModified: now
+            lastModified: now,
+            mediaType: null,
+            mediaUrl: null
         };
         
-        // Add media data as separate fields if it exists
-        if (entryData.mediaData) {
-            docData.mediaType = entryData.mediaData.type || null;
-            docData.mediaUrl = entryData.mediaData.data || null;
-        } else {
-            docData.mediaType = null;
-            docData.mediaUrl = null;
+        // Check if media data exists and validate size
+        if (entryData.mediaData && entryData.mediaData.data) {
+            const dataSize = entryData.mediaData.data.length;
+            console.log('Media data size:', Math.round(dataSize / 1024), 'KB');
+            
+            if (dataSize > MAX_COMPRESSED_SIZE) {
+                throw new Error(`Image too large after compression (${Math.round(dataSize / 1024)}KB). Please use a smaller image or reduce quality.`);
+            }
+            
+            docData.mediaType = entryData.mediaData.type;
+            docData.mediaUrl = entryData.mediaData.data;
         }
         
-        console.log('Attempting to save entry (media data flattened)');
+        console.log('Attempting to save entry to Firestore');
         const docRef = await addDoc(entriesCollectionRef, docData);
         console.log('Entry saved with ID:', docRef.id);
         showNotification('Entry saved successfully!');
@@ -190,7 +211,13 @@ async function saveEntryToFirestore(entryData) {
         console.error('Error saving entry:', error);
         console.error('Error code:', error.code);
         console.error('Error message:', error.message);
-        showNotification('Error saving entry to cloud: ' + error.message, true);
+        
+        let errorMessage = error.message;
+        if (error.code === 'invalid-argument') {
+            errorMessage = 'Entry data is too large. Try using a smaller image or remove the image.';
+        }
+        
+        showNotification('Error saving entry: ' + errorMessage, true);
         throw error;
     }
 }
@@ -206,7 +233,7 @@ async function updateEntryInFirestore(firestoreId, updatedData) {
         };
         
         await updateDoc(docRef, updateData);
-        showNotification('Entry updated successfully, please refresh the page');
+        showNotification('Entry updated successfully!');
         return true;
     } catch (error) {
         console.error('Error updating entry:', error);
@@ -228,10 +255,11 @@ async function moveEntryToTrash(firestoreId) {
             deletedDate: Timestamp.now(),
             userId: userId
         });
+        showNotification('Entry moved to trash');
         return true;
     } catch (error) {
         console.error('Error moving entry to trash:', error);
-        throw error; // Re-throw to handle in UI
+        throw error;
     }
 }
 
@@ -267,9 +295,14 @@ async function deleteEntryPermanently(firestoreId) {
     }
 }
 
-// Utility functions
-function compressImage(file) {
-    return new Promise((resolve) => {
+// Improved image compression with size validation
+function compressImage(file, maxSizeKB = 800) {
+    return new Promise((resolve, reject) => {
+        if (!file.type.startsWith('image/')) {
+            reject(new Error('File must be an image'));
+            return;
+        }
+
         const reader = new FileReader();
         reader.onload = function(e) {
             const img = new Image();
@@ -278,10 +311,11 @@ function compressImage(file) {
                 let width = img.width;
                 let height = img.height;
 
-                // Calculate new dimensions
-                if (width > 800) {
-                    height = height * (800 / width);
-                    width = 800;
+                // Calculate new dimensions (max 800px width)
+                const maxWidth = 800;
+                if (width > maxWidth) {
+                    height = height * (maxWidth / width);
+                    width = maxWidth;
                 }
 
                 canvas.width = width;
@@ -289,10 +323,28 @@ function compressImage(file) {
 
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0, width, height);
-                resolve(canvas.toDataURL('image/jpeg', 0.7));
+
+                // Try different quality levels to get under size limit
+                let quality = 0.7;
+                let dataUrl = canvas.toDataURL('image/jpeg', quality);
+                
+                // If still too large, reduce quality further
+                while (dataUrl.length > maxSizeKB * 1024 && quality > 0.1) {
+                    quality -= 0.1;
+                    dataUrl = canvas.toDataURL('image/jpeg', quality);
+                }
+
+                if (dataUrl.length > maxSizeKB * 1024) {
+                    reject(new Error(`Unable to compress image below ${maxSizeKB}KB. Please use a smaller image.`));
+                } else {
+                    console.log(`Image compressed to ${Math.round(dataUrl.length / 1024)}KB at quality ${quality.toFixed(1)}`);
+                    resolve(dataUrl);
+                }
             };
+            img.onerror = () => reject(new Error('Failed to load image'));
             img.src = e.target.result;
         };
+        reader.onerror = () => reject(new Error('Failed to read file'));
         reader.readAsDataURL(file);
     });
 }
@@ -306,7 +358,6 @@ function sortEntries(entries, sortBy = 'newest') {
 }
 
 function showNotification(message, isError = false) {
-    // Create notifications container if it doesn't exist
     let container = document.querySelector('.notifications-container');
     if (!container) {
         container = document.createElement('div');
@@ -321,7 +372,6 @@ function showNotification(message, isError = false) {
     
     container.appendChild(notification);
     
-    // Trigger animation
     requestAnimationFrame(() => {
         notification.classList.add('show');
     });
@@ -329,18 +379,7 @@ function showNotification(message, isError = false) {
     setTimeout(() => {
         notification.classList.remove('show');
         setTimeout(() => notification.remove(), 300);
-    }, 3000);
-}
-
-// Deprecated localStorage functions (kept for backward compatibility)
-function getFromLocalStorage() {
-    console.warn('getFromLocalStorage is deprecated. Use journalApp.entries instead.');
-    return journalApp.entries || [];
-}
-
-function saveToLocalStorage(entries) {
-    console.warn('saveToLocalStorage is deprecated. Use Firestore functions instead.');
-    return false;
+    }, 4000);
 }
 
 // Cleanup function
@@ -351,7 +390,7 @@ function cleanup() {
     }
 }
 
-// Add after cleanup function
+// Auth check
 async function checkAuth() {
     const auth = getAuth();
     if (!auth.currentUser || auth.currentUser.isAnonymous) {
@@ -366,6 +405,7 @@ async function checkAuth() {
 
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM loaded, initializing Firebase...');
     initializeFirebase();
 });
 
@@ -392,17 +432,12 @@ window.journalApp = {
     initializeFirebase,
     cleanup,
     checkAuth,
-    // Firestore functions
     saveEntryToFirestore,
     updateEntryInFirestore,
     moveEntryToTrash,
     restoreEntryFromTrash,
     deleteEntryPermanently,
-    // Utility functions
     showNotification,
     sortEntries,
-    compressImage,
-    // Deprecated localStorage functions (for backward compatibility)
-    getFromLocalStorage,
-    saveToLocalStorage
+    compressImage
 };

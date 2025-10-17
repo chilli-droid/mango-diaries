@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase Diagnostic - Mango Diaries</title>
+    <link rel="stylesheet" href="frontend-style.css">
+    <script src="firebase-config.js"></script>
+    <style>
+        .diagnostic-box {
+            background: #f5f5f5;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 8px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .warning { background: #fff3cd; color: #856404; }
+    </style>
+</head>
+<body>
+    <header class="topbar">
+        <h1>🔧 Firebase Diagnostic</h1>
+        <a href="index.html">Back to Home</a>
+    </header>
+
+    <main class="container">
+        <section class="card">
+            <h2>Checking Firebase Configuration...</h2>
+            
+            <div id="configCheck" class="diagnostic-box">
+                Running diagnostics...
+            </div>
+
+            <h3>Test Results:</h3>
+            <div id="results"></div>
+
+            <button onclick="runTests()" style="margin-top: 1rem;">🔄 Re-run Tests</button>
+        </section>
+    </main>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        function addResult(message, type = 'info') {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `diagnostic-box ${type}`;
+            div.textContent = message;
+            results.appendChild(div);
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+
+        window.runTests = async function() {
+            clearResults();
+            
+            // Test 1: Check if __firebase_config exists
+            addResult('Test 1: Checking __firebase_config variable...', 'info');
+            if (typeof __firebase_config === 'undefined') {
+                addResult('❌ FAIL: __firebase_config is not defined. Check if firebase-config.js is loaded.', 'error');
+                return;
+            } else {
+                addResult('✅ PASS: __firebase_config exists', 'success');
+            }
+
+            // Test 2: Parse config
+            addResult('\nTest 2: Parsing Firebase config...', 'info');
+            let firebaseConfig;
+            try {
+                firebaseConfig = JSON.parse(__firebase_config);
+                addResult('✅ PASS: Config parsed successfully', 'success');
+                
+                const configCheck = document.getElementById('configCheck');
+                configCheck.className = 'diagnostic-box success';
+                configCheck.textContent = 'Firebase Config Found:\n' + JSON.stringify(firebaseConfig, null, 2);
+            } catch (error) {
+                addResult('❌ FAIL: Could not parse config - ' + error.message, 'error');
+                return;
+            }
+
+            // Test 3: Check required fields
+            addResult('\nTest 3: Checking required Firebase fields...', 'info');
+            const requiredFields = ['apiKey', 'authDomain', 'projectId', 'storageBucket', 'messagingSenderId', 'appId'];
+            let allFieldsPresent = true;
+            
+            for (const field of requiredFields) {
+                if (!firebaseConfig[field]) {
+                    addResult(`❌ Missing field: ${field}`, 'error');
+                    allFieldsPresent = false;
+                } else {
+                    addResult(`✅ ${field}: ${firebaseConfig[field].substring(0, 20)}...`, 'success');
+                }
+            }
+
+            if (!allFieldsPresent) {
+                addResult('❌ FAIL: Some required fields are missing', 'error');
+                return;
+            }
+
+            // Test 4: Initialize Firebase
+            addResult('\nTest 4: Initializing Firebase...', 'info');
+            try {
+                const app = initializeApp(firebaseConfig);
+                addResult('✅ PASS: Firebase initialized successfully', 'success');
+            } catch (error) {
+                addResult('❌ FAIL: Firebase initialization failed - ' + error.message, 'error');
+                return;
+            }
+
+            // Test 5: Get Auth
+            addResult('\nTest 5: Getting Firebase Auth...', 'info');
+            try {
+                const auth = getAuth();
+                addResult('✅ PASS: Firebase Auth ready', 'success');
+                
+                // Check if user is signed in
+                if (auth.currentUser) {
+                    addResult(`✅ User signed in: ${auth.currentUser.email}`, 'success');
+                } else {
+                    addResult('⚠️ WARNING: No user currently signed in', 'warning');
+                }
+            } catch (error) {
+                addResult('❌ FAIL: Auth error - ' + error.message, 'error');
+            }
+
+            // Test 6: Get Firestore
+            addResult('\nTest 6: Getting Firestore...', 'info');
+            try {
+                const db = getFirestore();
+                addResult('✅ PASS: Firestore ready', 'success');
+            } catch (error) {
+                addResult('❌ FAIL: Firestore error - ' + error.message, 'error');
+            }
+
+            addResult('\n=== DIAGNOSTIC COMPLETE ===', 'info');
+        };
+
+        // Run tests on page load
+        window.addEventListener('load', () => {
+            setTimeout(runTests, 500);
+        });
+    </script>
+</body>
+</html>
