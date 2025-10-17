@@ -26,41 +26,59 @@ let entriesCollectionRef;
 let unsubscribeListener;
 let db, userId, appId;
 let firebaseInitialized = false;
+let authInstance = null;
+let appInstance = null;
+
+// Get Firebase config from global variable
+function getFirebaseConfig() {
+    // Try multiple ways to get the config
+    if (window.firebaseConfig) {
+        console.log("Using window.firebaseConfig");
+        return window.firebaseConfig;
+    }
+    
+    if (window.__firebase_config) {
+        console.log("Using window.__firebase_config");
+        try {
+            return JSON.parse(window.__firebase_config);
+        } catch (e) {
+            console.error("Error parsing __firebase_config:", e);
+        }
+    }
+    
+    // Fallback: hardcoded config
+    console.log("Using fallback config");
+    return {
+        apiKey: "AIzaSyB-TDKJTCnIPl4wkQDXZcZvYaadjZuhelk",
+        authDomain: "journal-app-bc5ce.firebaseapp.com",
+        projectId: "journal-app-bc5ce",
+        storageBucket: "journal-app-bc5ce.firebasestorage.app",
+        messagingSenderId: "1019175672379",
+        appId: "1:1019175672379:web:4062780bcc76e552421a1e",
+        measurementId: "G-SFEZDN48R7"
+    };
+}
 
 // Initialize Firebase and get user info
 function initializeFirebase() {
-    // Try to get config from parent directory or current directory
-    let firebaseConfig;
-    
-    if (typeof __firebase_config !== 'undefined') {
-        try {
-            firebaseConfig = JSON.parse(__firebase_config);
-            console.log('Firebase config loaded from __firebase_config');
-        } catch (error) {
-            console.error('Error parsing Firebase config:', error);
-            showNotification('System configuration error. Please try again later.', true);
-            return false;
-        }
-    } else {
-        console.error('Firebase configuration is missing.');
-        showNotification('System configuration missing. Please try again later.', true);
-        return false;
-    }
-
-    if (Object.keys(firebaseConfig).length === 0) {
-        console.error('Firebase configuration is empty.');
-        showNotification('System configuration error. Please try again later.', true);
-        return false;
-    }
-
     try {
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        db = getFirestore(app);
+        const firebaseConfig = getFirebaseConfig();
+        console.log('Firebase config loaded:', firebaseConfig.projectId);
+        
+        if (!firebaseConfig.apiKey) {
+            throw new Error("Firebase configuration is incomplete");
+        }
+
+        // Initialize Firebase
+        appInstance = initializeApp(firebaseConfig);
+        authInstance = getAuth(appInstance);
+        db = getFirestore(appInstance);
         firebaseInitialized = true;
+        
         console.log('Firebase initialized successfully');
 
-        onAuthStateChanged(auth, (user) => {
+        // Set up auth state listener
+        onAuthStateChanged(authInstance, (user) => {
             if (user && !user.isAnonymous) {
                 userId = user.uid;
                 appId = 'journal-app';
@@ -158,10 +176,20 @@ function setupRealtimeListener() {
     });
 }
 
-// Save new entry to Firestore - SIMPLIFIED VERSION
+// Save new entry to Firestore
 async function saveEntryToFirestore(entryData) {
-    if (!await checkAuth()) {
-        throw new Error('Not authenticated');
+    console.log('saveEntryToFirestore called with:', entryData);
+    
+    // Ensure Firebase is initialized
+    if (!firebaseInitialized || !authInstance) {
+        console.error('Firebase not initialized');
+        throw new Error('Firebase not initialized. Please wait and try again.');
+    }
+
+    // Check authentication
+    const user = authInstance.currentUser;
+    if (!user || user.isAnonymous) {
+        throw new Error('Not authenticated. Please sign in again.');
     }
 
     // Basic validation
@@ -175,7 +203,7 @@ async function saveEntryToFirestore(entryData) {
     try {
         const now = Timestamp.now();
         
-        // Create simple document data without complex media handling first
+        // Create simple document data
         const docData = {
             title: entryData.title.trim(),
             content: entryData.content.trim(),
@@ -183,7 +211,7 @@ async function saveEntryToFirestore(entryData) {
             videoLink: entryData.videoLink || null,
             deleted: false,
             date: now,
-            userId: userId,
+            userId: user.uid,
             lastModified: now
         };
         
@@ -225,6 +253,8 @@ async function saveEntryToFirestore(entryData) {
             errorMessage = 'Network error. Please check your internet connection.';
         } else if (error.message.includes('quota')) {
             errorMessage = 'Storage quota exceeded. Please try with a smaller image.';
+        } else if (error.code === 'invalid-argument') {
+            errorMessage = 'Invalid data. Please check your entry and try again.';
         }
         
         showNotification(errorMessage, true);
@@ -422,8 +452,12 @@ function cleanup() {
 
 // Auth check
 async function checkAuth() {
-    const auth = getAuth();
-    if (!auth.currentUser || auth.currentUser.isAnonymous) {
+    if (!authInstance) {
+        throw new Error('Authentication not initialized');
+    }
+    
+    const user = authInstance.currentUser;
+    if (!user || user.isAnonymous) {
         showNotification('Please sign in to access your journal.', true);
         setTimeout(() => {
             window.location.href = '../index.html';
