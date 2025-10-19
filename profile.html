@@ -6,6 +6,216 @@
     <title>Profile - Mango Diaries</title>
     <link rel="stylesheet" href="frontend-style.css">
     <script src="firebase-config.js"></script>
+    <style>
+        .profile-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        .profile-picture-container {
+            position: relative;
+            display: inline-block;
+            margin-bottom: 1rem;
+        }
+        
+        .profile-picture {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 4px solid var(--color-accent);
+        }
+        
+        .edit-profile-pic {
+            position: absolute;
+            bottom: 5px;
+            right: 5px;
+            background: var(--color-accent);
+            border: 2px solid white;
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 1.2rem;
+            transition: all 0.3s ease;
+        }
+        
+        .edit-profile-pic:hover {
+            background: var(--color-accent-hover);
+            transform: scale(1.1);
+        }
+        
+        /* Popup Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            padding: 1rem;
+        }
+        
+        .modal-content {
+            background-color: var(--color-secondary-bg);
+            margin: 2rem auto;
+            padding: 2rem;
+            border-radius: var(--border-radius-card);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+        }
+        
+        .close-modal {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--color-text-light);
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+        }
+        
+        .close-modal:hover {
+            background-color: var(--color-accent);
+            color: var(--color-text-dark);
+        }
+        
+        .profile-picture-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+        
+        .profile-option {
+            cursor: pointer;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 3px solid transparent;
+            transition: all 0.3s ease;
+            aspect-ratio: 1;
+        }
+        
+        .profile-option:hover {
+            transform: scale(1.05);
+            border-color: var(--color-accent);
+        }
+        
+        .profile-option.selected {
+            border-color: var(--color-text-dark);
+            border-width: 4px;
+        }
+        
+        .profile-option img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .disclaimer-box {
+            background-color: #fff8e1;
+            border: 2px solid #ffd54f;
+            border-radius: var(--border-radius-card);
+            padding: 1.25rem;
+            margin: 1.5rem 0;
+            font-size: 0.9rem;
+        }
+        
+        .disclaimer-box h4 {
+            color: #e65100;
+            margin-bottom: 0.5rem;
+            font-size: 1rem;
+        }
+        
+        .disclaimer-box p {
+            margin-bottom: 0.5rem;
+            line-height: 1.4;
+        }
+        
+        .disclaimer-box ul {
+            margin-left: 1.25rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .disclaimer-box li {
+            margin-bottom: 0.25rem;
+            font-size: 0.85rem;
+        }
+        
+        /* Bio Section */
+        .bio-section {
+            margin: 2rem 0;
+            padding: 1.5rem;
+            background-color: var(--color-secondary-bg);
+            border-radius: var(--border-radius-card);
+            border: 2px solid var(--color-accent);
+        }
+        
+        .bio-textarea {
+            width: 100%;
+            min-height: 100px;
+            padding: 1rem;
+            border: 2px solid var(--color-accent);
+            border-radius: var(--border-radius-card);
+            font-family: var(--font-family-primary);
+            font-size: 1rem;
+            resize: vertical;
+            margin-bottom: 1rem;
+        }
+        
+        .bio-display {
+            padding: 1rem;
+            background-color: var(--color-main-bg);
+            border-radius: var(--border-radius-card);
+            min-height: 60px;
+            line-height: 1.5;
+        }
+        
+        .bio-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .bio-actions button {
+            flex: 1;
+            padding: 0.75rem 1.5rem;
+        }
+        
+        @media (min-width: 768px) {
+            .profile-picture-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 1.25rem;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .profile-picture-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 0.75rem;
+            }
+            
+            .modal-content {
+                margin: 1rem auto;
+                padding: 1.5rem;
+            }
+        }
+    </style>
 </head>
 <body>
     <header class="topbar">
@@ -15,34 +225,127 @@
 
     <main class="container">
         <section class="profile-section card">
-            <h2>Account Details</h2>
-            
-            <div class="profile-picture">
-                <input type="file" id="profilePicInput" accept="image/*" style="display: none;">
-                <label for="profilePicInput" class="profile-pic-label">
-                    <img id="profilePicture" src="assets/default-profile.png" alt="Profile Picture">
-                    <div class="overlay">Change Photo</div>
-                </label>
+            <div class="profile-header">
+                <div class="profile-picture-container">
+                    <img id="currentProfilePicture" src="assets/default-profile.png" alt="Your Profile" class="profile-picture">
+                    <div class="edit-profile-pic" onclick="openProfilePictureModal()">
+                        ✏️
+                    </div>
+                </div>
+                <h2 id="profileUsername">Loading Username...</h2>
             </div>
-            
-            <h2 id="profileUsername">Loading Username...</h2>
             
             <div class="user-details" style="text-align: left; margin-top: 20px;">
                 <p><strong>Email:</strong> <span id="profileEmail">...</span></p>
                 <p><strong>Date Joined:</strong> <span id="profileJoined">...</span></p>
             </div>
+            
+            <!-- Bio Section -->
+            <div class="bio-section">
+                <h3>About Me</h3>
+                <div id="bioDisplay" class="bio-display">
+                    No bio added yet. Click edit to add something about yourself!
+                </div>
+                <div id="bioEdit" style="display: none;">
+                    <textarea id="bioTextarea" class="bio-textarea" placeholder="Tell us a bit about yourself... (This will be saved to the cloud and visible across your devices)"></textarea>
+                    <div class="bio-actions">
+                        <button onclick="saveBio()" class="primary-button">Save Bio</button>
+                        <button onclick="cancelEditBio()" class="button-link" style="background: transparent; border: 2px solid var(--color-accent);">Cancel</button>
+                    </div>
+                </div>
+                <button id="editBioButton" onclick="editBio()" class="button-link" style="display: block; width: auto; margin-top: 1rem; padding: 0.5rem 1rem;">
+                    ✏️ Edit Bio
+                </button>
+            </div>
         </section>
     </main>
+
+    <!-- Profile Picture Modal -->
+    <div id="profilePictureModal" class="modal">
+        <div class="modal-content">
+            <button class="close-modal" onclick="closeProfilePictureModal()">&times;</button>
+            <h3>Choose Your Profile Picture</h3>
+            <p>Select any image below to set as your profile picture:</p>
+            
+            <div class="profile-picture-grid" id="profilePictureGrid">
+                <!-- Profile pictures will be loaded here by JavaScript -->
+            </div>
+            
+            <div class="disclaimer-box">
+                <h4>📝 Important Information</h4>
+                <p><strong>Profile Picture Storage:</strong> Your profile picture is saved locally on this device only.</p>
+                <ul>
+                    <li>It won't appear if you log in on another device</li>
+                    <li>Clearing browser data will reset your profile picture</li>
+                    <li>Your picture is private and only visible to you</li>
+                </ul>
+                <p><strong>Image Credits:</strong> All profile picture options are royalty-free images. 
+                   These images are provided for personalization and entertainment purposes only. 
+                   Hoola Boola Studios does not claim ownership of these images and gives full credit to their original creators.</p>
+            </div>
+            
+            <div style="text-align: center; margin-top: 1.5rem;">
+                <button onclick="resetToDefault()" class="button-link" style="display: inline-block; width: auto; padding: 0.75rem 1.5rem;">
+                    Reset to Default Avatar
+                </button>
+            </div>
+        </div>
+    </div>
     
     <div id="messageBox"></div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         
         const usernameEl = document.getElementById('profileUsername');
         const emailEl = document.getElementById('profileEmail');
         const joinedEl = document.getElementById('profileJoined');
+        const currentProfilePic = document.getElementById('currentProfilePicture');
+        const profileGrid = document.getElementById('profilePictureGrid');
+        const profileModal = document.getElementById('profilePictureModal');
+        const bioDisplay = document.getElementById('bioDisplay');
+        const bioEdit = document.getElementById('bioEdit');
+        const bioTextarea = document.getElementById('bioTextarea');
+        const editBioButton = document.getElementById('editBioButton');
+
+        let currentUser = null;
+        let db = null;
+
+        // Profile picture options
+        const profilePictures = [
+            {
+                id: 'greyscale',
+                url: 'https://i.pinimg.com/736x/65/1c/6d/651c6da502353948bdc929f02da2b8e0.jpg',
+                name: 'Greyscale Art'
+            },
+            {
+                id: 'rose',
+                url: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS0LyayQYzA4AmLBfmXmQwyppwfcK05o4V2rtHHz94BeaxvDEkwXvwc4_67XajnF69odno&usqp=CAU',
+                name: 'Rose Theme'
+            },
+            {
+                id: 'orange',
+                url: 'https://i.pinimg.com/736x/3a/48/10/3a48102441c0badb77b8e81ebafc5584.jpg',
+                name: 'Orange Abstract'
+            },
+            {
+                id: 'sea-blue',
+                url: 'https://i.pinimg.com/736x/4d/c4/12/4dc412d382699b3fa60f0d12f25fcaf1.jpg',
+                name: 'Sea Blue'
+            },
+            {
+                id: 'mono',
+                url: 'https://i.pinimg.com/736x/80/8a/d0/808ad011a0f8bfe16369175cede99aa7.jpg',
+                name: 'Monochrome'
+            },
+            {
+                id: 'sage-green',
+                url: 'https://i.pinimg.com/236x/9a/b0/75/9ab075d8b2f6cd9ccb084cf43ff88fd5.jpg',
+                name: 'Sage Green'
+            }
+        ];
 
         function showMessage(message, isError = false) {
             const box = document.getElementById('messageBox');
@@ -58,47 +361,200 @@
             return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
         }
 
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-
-        if (Object.keys(firebaseConfig).length > 0) {
-            const app = initializeApp(firebaseConfig);
-            const auth = getAuth(app);
-            
-            onAuthStateChanged(auth, (user) => {
-                if (user && !user.isAnonymous) {
-                    const username = user.displayName || 'No Username Set';
-                    const email = user.email || 'No Email';
-                    const dateJoined = user.metadata.creationTime;
-
-                    usernameEl.textContent = username;
-                    emailEl.textContent = email;
-                    joinedEl.textContent = formatDate(dateJoined);
-                    
-                } else {
-                    console.log("User not signed in. Redirecting to landing.");
-                    showMessage('Access denied. Please sign in.', true);
-                    usernameEl.textContent = 'Not Signed In';
-                    setTimeout(() => { window.location.href = 'index.html'; }, 500);
-                }
-            });
-        } else {
-            showMessage("System Error: Firebase config missing. Authentication disabled.", true);
-            usernameEl.textContent = 'System Error';
+        // Profile Picture Functions
+        function loadSavedProfilePicture() {
+            const savedProfilePic = localStorage.getItem('userProfilePicture');
+            if (savedProfilePic && savedProfilePic !== 'default') {
+                currentProfilePic.src = savedProfilePic;
+            } else {
+                currentProfilePic.src = 'assets/default-profile.png';
+            }
         }
 
-        document.getElementById('profilePicInput').addEventListener('change', async (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                try {
-                    const compressedImage = await journalApp.compressImage(file);
-                    document.getElementById('profilePicture').src = compressedImage;
-                    // Here you would typically upload to Firebase Storage
-                    showMessage('Profile picture updated!');
-                } catch (error) {
-                    showMessage('Error updating profile picture', true);
+        function saveProfilePicture(imageUrl) {
+            localStorage.setItem('userProfilePicture', imageUrl);
+            currentProfilePic.src = imageUrl;
+            showMessage('Profile picture updated successfully!');
+            closeProfilePictureModal();
+        }
+
+        function resetToDefault() {
+            localStorage.setItem('userProfilePicture', 'default');
+            currentProfilePic.src = 'assets/default-profile.png';
+            showMessage('Profile picture reset to default');
+            closeProfilePictureModal();
+        }
+
+        function openProfilePictureModal() {
+            profileModal.style.display = 'block';
+            createProfilePictureGrid();
+        }
+
+        function closeProfilePictureModal() {
+            profileModal.style.display = 'none';
+        }
+
+        function createProfilePictureGrid() {
+            profileGrid.innerHTML = '';
+            
+            profilePictures.forEach(pic => {
+                const profileOption = document.createElement('div');
+                profileOption.className = 'profile-option';
+                profileOption.innerHTML = `<img src="${pic.url}" alt="${pic.name}" loading="lazy">`;
+                
+                profileOption.addEventListener('click', () => {
+                    saveProfilePicture(pic.url);
+                });
+                
+                profileGrid.appendChild(profileOption);
+            });
+        }
+
+        // Bio Functions
+        async function loadBio() {
+            if (!currentUser || !db) return;
+            
+            try {
+                const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+                if (userDoc.exists()) {
+                    const userData = userDoc.data();
+                    const bio = userData.bio || '';
+                    
+                    if (bio.trim()) {
+                        bioDisplay.textContent = bio;
+                    } else {
+                        bioDisplay.textContent = 'No bio added yet. Click edit to add something about yourself!';
+                    }
                 }
+            } catch (error) {
+                console.error('Error loading bio:', error);
+            }
+        }
+
+        function editBio() {
+            bioDisplay.style.display = 'none';
+            bioEdit.style.display = 'block';
+            editBioButton.style.display = 'none';
+            
+            // Load current bio into textarea
+            const currentBio = bioDisplay.textContent;
+            if (!currentBio.includes('No bio added yet')) {
+                bioTextarea.value = currentBio;
+            }
+            
+            bioTextarea.focus();
+        }
+
+        function cancelEditBio() {
+            bioEdit.style.display = 'none';
+            bioDisplay.style.display = 'block';
+            editBioButton.style.display = 'block';
+        }
+
+        async function saveBio() {
+            if (!currentUser || !db) {
+                showMessage('Error: Not connected to database', true);
+                return;
+            }
+
+            const newBio = bioTextarea.value.trim();
+            
+            try {
+                // Update bio in Firestore
+                await updateDoc(doc(db, 'users', currentUser.uid), {
+                    bio: newBio
+                });
+                
+                // Update display
+                if (newBio) {
+                    bioDisplay.textContent = newBio;
+                } else {
+                    bioDisplay.textContent = 'No bio added yet. Click edit to add something about yourself!';
+                }
+                
+                bioEdit.style.display = 'none';
+                bioDisplay.style.display = 'block';
+                editBioButton.style.display = 'block';
+                
+                showMessage('Bio saved successfully!');
+            } catch (error) {
+                console.error('Error saving bio:', error);
+                showMessage('Error saving bio. Please try again.', true);
+            }
+        }
+
+        // Firebase Initialization
+        function getFirebaseConfig() {
+            if (window.firebaseConfig) return window.firebaseConfig;
+            if (window.__firebase_config) {
+                try { return JSON.parse(window.__firebase_config); } catch (e) { console.error(e); }
+            }
+            return {
+                apiKey: "AIzaSyB-TDKJTCnIPl4wkQDXZcZvYaadjZuhelk",
+                authDomain: "journal-app-bc5ce.firebaseapp.com",
+                projectId: "journal-app-bc5ce",
+                storageBucket: "journal-app-bc5ce.firebasestorage.app",
+                messagingSenderId: "1019175672379",
+                appId: "1:1019175672379:web:4062780bcc76e552421a1e",
+                measurementId: "G-SFEZDN48R7"
+            };
+        }
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                const firebaseConfig = getFirebaseConfig();
+                const app = initializeApp(firebaseConfig);
+                const auth = getAuth(app);
+                db = getFirestore(app);
+                
+                // Load saved profile picture
+                loadSavedProfilePicture();
+                
+                onAuthStateChanged(auth, async (user) => {
+                    if (user && !user.isAnonymous) {
+                        currentUser = user;
+                        const username = user.displayName || 'No Username Set';
+                        const email = user.email || 'No Email';
+                        const dateJoined = user.metadata.creationTime;
+
+                        usernameEl.textContent = username;
+                        emailEl.textContent = email;
+                        joinedEl.textContent = formatDate(dateJoined);
+                        
+                        // Load user's bio
+                        await loadBio();
+                        
+                    } else {
+                        console.log("User not signed in. Redirecting to landing.");
+                        showMessage('Please sign in to view your profile.', true);
+                        usernameEl.textContent = 'Not Signed In';
+                        setTimeout(() => { window.location.href = 'index.html'; }, 500);
+                    }
+                });
+            } catch (error) {
+                console.error("Error initializing profile:", error);
+                showMessage("Error loading profile. Please try refreshing.", true);
+                
+                // Still allow profile picture selection even if Firebase fails
+                loadSavedProfilePicture();
             }
         });
+
+        // Close modal when clicking outside
+        window.addEventListener('click', (event) => {
+            if (event.target === profileModal) {
+                closeProfilePictureModal();
+            }
+        });
+
+        // Make functions globally available
+        window.openProfilePictureModal = openProfilePictureModal;
+        window.closeProfilePictureModal = closeProfilePictureModal;
+        window.resetToDefault = resetToDefault;
+        window.editBio = editBio;
+        window.cancelEditBio = cancelEditBio;
+        window.saveBio = saveBio;
     </script>
 </body>
 </html>
