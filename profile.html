@@ -24,6 +24,31 @@
             border-radius: 50%;
             object-fit: cover;
             border: 4px solid var(--color-accent);
+            transition: border-color 0.3s ease;
+        }
+        
+        .profile-picture.greyscale {
+            border-color: #666666;
+        }
+        
+        .profile-picture.rose {
+            border-color: #e91e63;
+        }
+        
+        .profile-picture.orange {
+            border-color: #ff9800;
+        }
+        
+        .profile-picture.sea-blue {
+            border-color: #2196f3;
+        }
+        
+        .profile-picture.mono {
+            border-color: #212121;
+        }
+        
+        .profile-picture.sage-green {
+            border-color: #4caf50;
         }
         
         .edit-profile-pic {
@@ -227,7 +252,7 @@
         <section class="profile-section card">
             <div class="profile-header">
                 <div class="profile-picture-container">
-                    <img id="currentProfilePicture" src="assets/default-profile.png" alt="Your Profile" class="profile-picture">
+                    <img id="currentProfilePicture" src="https://i.pinimg.com/736x/65/1c/6d/651c6da502353948bdc929f02da2b8e0.jpg" alt="Your Profile" class="profile-picture greyscale">
                     <div class="edit-profile-pic" onclick="openProfilePictureModal()">
                         ✏️
                     </div>
@@ -297,7 +322,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         
         const usernameEl = document.getElementById('profileUsername');
         const emailEl = document.getElementById('profileEmail');
@@ -313,37 +338,43 @@
         let currentUser = null;
         let db = null;
 
-        // Profile picture options
+        // Profile picture options with border colors
         const profilePictures = [
             {
                 id: 'greyscale',
                 url: 'https://i.pinimg.com/736x/65/1c/6d/651c6da502353948bdc929f02da2b8e0.jpg',
-                name: 'Greyscale Art'
+                name: 'Greyscale Art',
+                borderColor: '#666666'
             },
             {
                 id: 'rose',
                 url: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS0LyayQYzA4AmLBfmXmQwyppwfcK05o4V2rtHHz94BeaxvDEkwXvwc4_67XajnF69odno&usqp=CAU',
-                name: 'Rose Theme'
+                name: 'Rose Theme',
+                borderColor: '#e91e63'
             },
             {
                 id: 'orange',
                 url: 'https://i.pinimg.com/736x/3a/48/10/3a48102441c0badb77b8e81ebafc5584.jpg',
-                name: 'Orange Abstract'
+                name: 'Orange Abstract',
+                borderColor: '#ff9800'
             },
             {
                 id: 'sea-blue',
                 url: 'https://i.pinimg.com/736x/4d/c4/12/4dc412d382699b3fa60f0d12f25fcaf1.jpg',
-                name: 'Sea Blue'
+                name: 'Sea Blue',
+                borderColor: '#2196f3'
             },
             {
                 id: 'mono',
                 url: 'https://i.pinimg.com/736x/80/8a/d0/808ad011a0f8bfe16369175cede99aa7.jpg',
-                name: 'Monochrome'
+                name: 'Monochrome',
+                borderColor: '#212121'
             },
             {
                 id: 'sage-green',
                 url: 'https://i.pinimg.com/236x/9a/b0/75/9ab075d8b2f6cd9ccb084cf43ff88fd5.jpg',
-                name: 'Sage Green'
+                name: 'Sage Green',
+                borderColor: '#4caf50'
             }
         ];
 
@@ -364,23 +395,43 @@
         // Profile Picture Functions
         function loadSavedProfilePicture() {
             const savedProfilePic = localStorage.getItem('userProfilePicture');
+            const savedBorderClass = localStorage.getItem('userProfileBorder');
+            
             if (savedProfilePic && savedProfilePic !== 'default') {
                 currentProfilePic.src = savedProfilePic;
+                // Remove all border classes and add the saved one
+                currentProfilePic.className = 'profile-picture';
+                if (savedBorderClass) {
+                    currentProfilePic.classList.add(savedBorderClass);
+                }
             } else {
-                currentProfilePic.src = 'assets/default-profile.png';
+                // Set default to greyscale
+                currentProfilePic.src = 'https://i.pinimg.com/736x/65/1c/6d/651c6da502353948bdc929f02da2b8e0.jpg';
+                currentProfilePic.className = 'profile-picture greyscale';
             }
         }
 
-        function saveProfilePicture(imageUrl) {
+        function saveProfilePicture(imageUrl, borderClass) {
             localStorage.setItem('userProfilePicture', imageUrl);
+            localStorage.setItem('userProfileBorder', borderClass);
+            
             currentProfilePic.src = imageUrl;
+            // Update border class
+            currentProfilePic.className = 'profile-picture';
+            currentProfilePic.classList.add(borderClass);
+            
             showMessage('Profile picture updated successfully!');
             closeProfilePictureModal();
         }
 
         function resetToDefault() {
             localStorage.setItem('userProfilePicture', 'default');
-            currentProfilePic.src = 'assets/default-profile.png';
+            localStorage.setItem('userProfileBorder', 'greyscale');
+            
+            // Set to greyscale default
+            currentProfilePic.src = 'https://i.pinimg.com/736x/65/1c/6d/651c6da502353948bdc929f02da2b8e0.jpg';
+            currentProfilePic.className = 'profile-picture greyscale';
+            
             showMessage('Profile picture reset to default');
             closeProfilePictureModal();
         }
@@ -400,10 +451,11 @@
             profilePictures.forEach(pic => {
                 const profileOption = document.createElement('div');
                 profileOption.className = 'profile-option';
+                profileOption.style.borderColor = pic.borderColor;
                 profileOption.innerHTML = `<img src="${pic.url}" alt="${pic.name}" loading="lazy">`;
                 
                 profileOption.addEventListener('click', () => {
-                    saveProfilePicture(pic.url);
+                    saveProfilePicture(pic.url, pic.id);
                 });
                 
                 profileGrid.appendChild(profileOption);
@@ -460,10 +512,14 @@
             const newBio = bioTextarea.value.trim();
             
             try {
-                // Update bio in Firestore
-                await updateDoc(doc(db, 'users', currentUser.uid), {
-                    bio: newBio
-                });
+                // Use setDoc with merge: true instead of updateDoc
+                // This creates the document if it doesn't exist, or updates it if it does
+                await setDoc(doc(db, 'users', currentUser.uid), {
+                    bio: newBio,
+                    username: currentUser.displayName || 'User',
+                    email: currentUser.email,
+                    lastUpdated: new Date()
+                }, { merge: true }); // This is the key - merge: true
                 
                 // Update display
                 if (newBio) {
@@ -508,7 +564,7 @@
                 const auth = getAuth(app);
                 db = getFirestore(app);
                 
-                // Load saved profile picture
+                // Load saved profile picture (defaults to greyscale)
                 loadSavedProfilePicture();
                 
                 onAuthStateChanged(auth, async (user) => {
