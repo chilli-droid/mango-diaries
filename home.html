@@ -5,6 +5,61 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Mango Diaries</title>
     <link rel="stylesheet" href="frontend-style.css">
+    <style>
+        .welcome-header {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+        
+        .profile-pic-large {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid var(--color-accent);
+        }
+        
+        .welcome-text {
+            flex: 1;
+        }
+        
+        .update-notification {
+            background: linear-gradient(135deg, var(--color-accent), #ffa55d);
+            color: white;
+            padding: 1rem;
+            border-radius: var(--border-radius-card);
+            margin-bottom: 1.5rem;
+            text-align: center;
+            animation: pulse 2s infinite;
+        }
+        
+        .update-notification a {
+            color: white;
+            text-decoration: underline;
+            font-weight: 700;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+        
+        @media (max-width: 768px) {
+            .welcome-header {
+                text-align: center;
+                justify-content: center;
+            }
+            
+            .profile-pic-large {
+                width: 70px;
+                height: 70px;
+            }
+        }
+    </style>
 </head>
 <body>
     <header class="topbar">
@@ -14,13 +69,26 @@
 
     <main class="container">
         <section class="card">
-            <h2 id="welcomeHeader">Loading Dashboard...</h2>
+            <!-- Update Notification -->
+            <div class="update-notification">
+                🎉 <strong>*New Update* v0.86 released!</strong> 
+                <a href="whats-new.html">See what's new</a>
+            </div>
+
+            <div class="welcome-header">
+                <img id="dashboardProfilePic" src="assets/default-profile.png" alt="Profile" class="profile-pic-large">
+                <div class="welcome-text">
+                    <h2 id="welcomeHeader">Loading Dashboard...</h2>
+                    <p>Ready to write today's entry?</p>
+                </div>
+            </div>
             
             <div class="grid-menu">
                 <a href="journal/journal.html" class="grid-item card journal-link">Open My Journal</a>
                 <a href="settings.html" class="grid-item card">Settings</a>
                 <a href="notifications.html" class="grid-item card">Notifications</a>
-                <a href="profile.html" class="grid-item card">Profile</a>
+                <a href="profile.html" class="grid-item card">Profile & Avatar</a>
+                <a href="whats-new.html" class="grid-item card">What's New ✨</a>
             </div>
         </section>
     </main>
@@ -29,6 +97,8 @@
 
     <!-- Load Firebase config first -->
     <script src="firebase-config.js"></script>
+    <!-- Load profile picture manager -->
+    <script src="js/profile-pictures.js"></script>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
@@ -37,6 +107,7 @@
 
         const signOutButton = document.getElementById('signOutButton');
         const welcomeHeader = document.getElementById('welcomeHeader');
+        const dashboardProfilePic = document.getElementById('dashboardProfilePic');
 
         function showMessage(message, isError = false) {
             const box = document.getElementById('messageBox');
@@ -45,6 +116,17 @@
             if (isError) box.classList.add('error');
             else box.classList.remove('error');
             setTimeout(() => { box.classList.remove('show'); }, 3000);
+        }
+
+        // Load and display profile picture
+        function loadProfilePicture() {
+            const savedProfilePic = localStorage.getItem('userProfilePicture');
+            if (savedProfilePic && savedProfilePic !== 'default') {
+                dashboardProfilePic.src = savedProfilePic;
+            } else {
+                // Default to greyscale
+                dashboardProfilePic.src = 'https://i.pinimg.com/736x/65/1c/6d/651c6da502353948bdc929f02da2b8e0.jpg';
+            }
         }
 
         // Get Firebase config from global variable
@@ -61,7 +143,6 @@
                 }
             }
             
-            // Fallback config
             return {
                 apiKey: "AIzaSyB-TDKJTCnIPl4wkQDXZcZvYaadjZuhelk",
                 authDomain: "journal-app-bc5ce.firebasestorage.app",
@@ -80,6 +161,9 @@
             const app = initializeApp(firebaseConfig);
             const auth = getAuth(app);
             const db = getFirestore(app);
+
+            // Load profile picture
+            loadProfilePicture();
 
             onAuthStateChanged(auth, async (user) => {
                 if (user && !user.isAnonymous) {

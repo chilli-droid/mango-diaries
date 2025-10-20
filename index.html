@@ -73,14 +73,20 @@
         </section>
 
         <section class="card" style="text-align: center;">
+            <h2>✨ What's New in v0.86</h2>
+            <p>Check out the latest updates and improvements to Mango Diaries!</p>
+            <a href="whats-new.html?from=landing" class="button-link">See What's New</a>
+        </section>
+
+        <section class="card" style="text-align: center;">
             <h2>✉️ Feedback and Disclaimer</h2>
             <p>This service is extremely new and still in developing stages. Bugs are unfortunately extremely common and we have tried our best in testing stages to reduce the amount of bugs, but sometimes, you can miss parts. Please give us feedback or bug reports so that we can make this service better.</p>
-            <button>Send feedback to hoolaboolastudios@gmail.com</button>
+            <button onclick="sendFeedback()">Send feedback to hoolaboolastudios@gmail.com</button>
         </section>
 
         <section class="update-info">
             <p>*Nugget Companion expected to be in service sometime in late July or early August.</p>
-            <p>Current version 0.8 | Cloud server added. Sign-in functionality active. | Notifications being added soon.</p>
+            <p>Current version 0.86 | Profile pictures & bio added | Password reset available | Notifications coming soon.</p>
             <strong>Product of Hoola Boola Studios</strong>
         </section>
     </main>
@@ -101,6 +107,14 @@
         setTimeout(() => box.classList.remove('show'), 3000);
     }
 
+    function sendFeedback() {
+        const email = 'hoolaboolastudios@gmail.com';
+        const subject = 'Mango Diaries Feedback';
+        const body = 'Hello Hoola Boola Studios,\n\nI would like to share some feedback about Mango Diaries:\n\n';
+        
+        window.open(`mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
+    }
+
     try {
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
@@ -114,6 +128,9 @@
             showMessage("🥭 Welcome to Mango Diaries!", false);
         }, 500);
     };
+
+    // Make functions globally available
+    window.sendFeedback = sendFeedback;
 </script>
 </body>
 </html>
