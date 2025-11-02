@@ -27,28 +27,28 @@
             transition: border-color 0.3s ease;
         }
         
-        .profile-picture.greyscale {
-            border-color: #666666;
+        .profile-picture.cat-bow {
+            border-color: #ff69b4;
         }
         
-        .profile-picture.rose {
-            border-color: #e91e63;
+        .profile-picture.otter {
+            border-color: #4db8e8;
         }
         
-        .profile-picture.orange {
-            border-color: #ff9800;
+        .profile-picture.bunny {
+            border-color: #e8d4f1;
         }
         
-        .profile-picture.sea-blue {
-            border-color: #2196f3;
+        .profile-picture.penguin {
+            border-color: #ffc0cb;
         }
         
-        .profile-picture.mono {
-            border-color: #212121;
+        .profile-picture.gaming-cat {
+            border-color: #ff8c42;
         }
         
-        .profile-picture.sage-green {
-            border-color: #4caf50;
+        .profile-picture.hamster {
+            border-color: #ffd700;
         }
         
         .edit-profile-pic {
@@ -252,7 +252,7 @@
         <section class="profile-section card">
             <div class="profile-header">
                 <div class="profile-picture-container">
-                    <img id="currentProfilePicture" src="https://i.pinimg.com/736x/65/1c/6d/651c6da502353948bdc929f02da2b8e0.jpg" alt="Your Profile" class="profile-picture greyscale">
+                    <img id="currentProfilePicture" src="https://i.pinimg.com/736x/65/1c/6d/651c6da502353948bdc929f02da2b8e0.jpg" alt="Your Profile" class="profile-picture">
                     <div class="edit-profile-pic" onclick="openProfilePictureModal()">
                         ✏️
                     </div>
@@ -341,40 +341,34 @@
         // Profile picture options with border colors
         const profilePictures = [
             {
-                id: 'greyscale',
-                url: 'https://i.pinimg.com/736x/65/1c/6d/651c6da502353948bdc929f02da2b8e0.jpg',
-                name: 'Greyscale Art',
-                borderColor: '#666666'
+                id: 'cat',
+                url: 'assets/cat.jpeg',
+                name: 'Cat with Bow',
+                borderColor: '#ff69b4'
             },
             {
-                id: 'rose',
-                url: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS0LyayQYzA4AmLBfmXmQwyppwfcK05o4V2rtHHz94BeaxvDEkwXvwc4_67XajnF69odno&usqp=CAU',
-                name: 'Rose Theme',
-                borderColor: '#e91e63'
+                id: 'otter',
+                url: 'assets/otter.jpeg',
+                name: 'Cute Otter',
+                borderColor: '#4db8e8'
             },
             {
-                id: 'orange',
-                url: 'https://i.pinimg.com/736x/3a/48/10/3a48102441c0badb77b8e81ebafc5584.jpg',
-                name: 'Orange Abstract',
-                borderColor: '#ff9800'
+                id: 'bunny',
+                url: 'assets/bunny.jpeg',
+                name: 'Sleepy Bunny',
+                borderColor: '#e8d4f1'
             },
             {
-                id: 'sea-blue',
-                url: 'https://i.pinimg.com/736x/4d/c4/12/4dc412d382699b3fa60f0d12f25fcaf1.jpg',
-                name: 'Sea Blue',
-                borderColor: '#2196f3'
+                id: 'penguin',
+                url: 'assets/penguin.jpeg',
+                name: 'Baby Penguin',
+                borderColor: '#ffc0cb'
             },
             {
-                id: 'mono',
-                url: 'https://i.pinimg.com/736x/80/8a/d0/808ad011a0f8bfe16369175cede99aa7.jpg',
-                name: 'Monochrome',
-                borderColor: '#212121'
-            },
-            {
-                id: 'sage-green',
-                url: 'https://i.pinimg.com/236x/9a/b0/75/9ab075d8b2f6cd9ccb084cf43ff88fd5.jpg',
-                name: 'Sage Green',
-                borderColor: '#4caf50'
+                id: 'gamer-kitty',
+                url: 'assets/gamer-kitty.jpeg',
+                name: 'Gaming Cat',
+                borderColor: '#ff8c42'
             }
         ];
 
@@ -405,9 +399,9 @@
                     currentProfilePic.classList.add(savedBorderClass);
                 }
             } else {
-                // Set default to greyscale
+                // Set default
                 currentProfilePic.src = 'https://i.pinimg.com/736x/65/1c/6d/651c6da502353948bdc929f02da2b8e0.jpg';
-                currentProfilePic.className = 'profile-picture greyscale';
+                currentProfilePic.className = 'profile-picture';
             }
         }
 
@@ -426,11 +420,11 @@
 
         function resetToDefault() {
             localStorage.setItem('userProfilePicture', 'default');
-            localStorage.setItem('userProfileBorder', 'greyscale');
+            localStorage.removeItem('userProfileBorder');
             
-            // Set to greyscale default
+            // Set to default
             currentProfilePic.src = 'https://i.pinimg.com/736x/65/1c/6d/651c6da502353948bdc929f02da2b8e0.jpg';
-            currentProfilePic.className = 'profile-picture greyscale';
+            currentProfilePic.className = 'profile-picture';
             
             showMessage('Profile picture reset to default');
             closeProfilePictureModal();
@@ -614,4 +608,3 @@
     </script>
 </body>
 </html>
- 
