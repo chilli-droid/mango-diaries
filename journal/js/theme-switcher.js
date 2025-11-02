@@ -103,3 +103,4 @@ function setupThemeSwitcher() {
         minimizeButton.innerHTML = '+';
     }
 }
+ 
