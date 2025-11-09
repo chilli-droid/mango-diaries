@@ -19,7 +19,7 @@ import { getFirestore } from "https://www.gstatic.com/firebasejs/11.6.1/firebase
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB limit
 const MAX_COMPRESSED_SIZE = 1 * 1024 * 1024; // 1MB for Firestore (Firestore has ~1MB doc limit)
-const APP_VERSION = '0.8';
+const APP_VERSION = '1.0';
 
 // Global state
 let entriesCollectionRef;

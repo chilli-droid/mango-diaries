@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>What's New - Mango Diaries</title>
+    <link rel="stylesheet" href="frontend-style.css">
+    <style>
+        .version-card {
+            background: linear-gradient(135deg, var(--color-accent), #ffd6b3);
+            border-radius: var(--border-radius-card);
+            padding: 2rem;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+        
+        .version-badge {
+            background: var(--color-text-dark);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: 700;
+            display: inline-block;
+            margin-bottom: 1rem;
+        }
+        
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+        
+        .feature-card {
+            background: var(--color-secondary-bg);
+            padding: 1.5rem;
+            border-radius: var(--border-radius-card);
+            text-align: center;
+            border: 2px solid var(--color-accent);
+        }
+        
+        .feature-icon {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+        
+        .changelog {
+            background: var(--color-secondary-bg);
+            padding: 2rem;
+            border-radius: var(--border-radius-card);
+            margin-top: 2rem;
+        }
+        
+        .changelog-item {
+            margin-bottom: 1.5rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid var(--color-accent);
+        }
+        
+        .changelog-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+    </style>
+</head>
+<body>
+    <header class="topbar">
+        <h1><img src="assets/logo.PNG" alt="Mango" class="logo">Mango Diaries</h1>
+        <a href="home.html">Back to Dashboard</a>
+    </header>
+
+    <main class="container">
+        <section class="version-card">
+            <div class="version-badge">Version 1.0</div>
+            <h2>🎉 Major Update Available!</h2>
+            <p>We're excited to announce the official Version 1.0 release of Mango Diaries!</p>
+        </section>
+
+        <section class="card">
+            <h2>✨ What's New in Version 1.0</h2>
+            
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🎨</div>
+                    <h3>Custom Themes</h3>
+                    <p>Choose from multiple color themes to personalize your journaling experience</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">📱</div>
+                    <h3>Mobile Optimized</h3>
+                    <p>Completely redesigned for mobile with larger touch targets and better readability</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">☁️</div>
+                    <h3>Cloud Sync</h3>
+                    <p>Your entries are safely stored in the cloud and accessible across devices</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🖼️</div>
+                    <h3>Media Support</h3>
+                    <p>Add images, audio recordings, and video links to your journal entries</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="changelog card">
+            <h2>📋 Complete Changelog</h2>
+            
+            <div class="changelog-item">
+                <h3>Version 1.0 (Current)</h3>
+                <ul>
+                    <li>🎨 Added 5 customizable themes (Peach, Matcha, Cafe, Saltwater, Monochrome)</li>
+                    <li>📱 Complete mobile-first responsive redesign</li>
+                    <li>☁️ Full Firebase Cloud Firestore integration</li>
+                    <li>🖼️ Support for images, audio, and video links in entries</li>
+                    <li>🗑️ Trash system with 30-day automatic deletion</li>
+                    <li>📅 Calendar view for browsing entries by date</li>
+                    <li>🔍 Advanced search and filtering capabilities</li>
+                    <li>👤 User profiles with customizable avatars and bios</li>
+                    <li>🎯 Improved navigation and user experience</li>
+                    <li>🐛 Numerous bug fixes and performance improvements</li>
+                </ul>
+            </div>
+            
+            <div class="changelog-item">
+                <h3>Version 0.8 (Previous)</h3>
+                <ul>
+                    <li>Initial cloud server implementation</li>
+                    <li>Basic sign-in/sign-up functionality</li>
+                    <li>Core journal entry creation and editing</li>
+                    <li>Foundation for future features</li>
+                </ul>
+            </div>
+        </section>
+
+        <section class="card" style="text-align: center;">
+            <h2>🚀 What's Next?</h2>
+            <p>We're continuously working to improve Mango Diaries. Future updates may include:</p>
+            <ul style="display: inline-block; text-align: left; margin: 1rem 0;">
+                <li>Daily journaling reminders</li>
+                <li>Export and backup functionality</li>
+                <li>Rich text formatting in entries</li>
+                <li>Journal templates and prompts</li>
+                <li>And much more!</li>
+            </ul>
+            <p>Have suggestions? We'd love to hear from you!</p>
+            <a href="mailto:hoolaboolastudios@gmail.com" class="button-link">Send Feedback</a>
+        </section>
+    </main>
+</body>
+</html>
