@@ -214,4 +214,3 @@ window.closeModal = function() {
         modal.style.display = 'none';
     }
 };
- 
