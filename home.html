@@ -48,24 +48,6 @@
             100% { transform: scale(1); }
         }
         
-        .footer-links {
-            text-align: center;
-            margin-top: 2rem;
-            padding-top: 1rem;
-            border-top: 1px solid var(--color-accent);
-        }
-        
-        .footer-links a {
-            color: var(--color-text-light);
-            margin: 0 0.5rem;
-            text-decoration: none;
-            font-size: 0.9rem;
-        }
-        
-        .footer-links a:hover {
-            color: var(--color-accent);
-        }
-        
         @media (max-width: 768px) {
             .welcome-header {
                 text-align: center;
@@ -110,25 +92,12 @@
         </section>
     </main>
     
-    <div class="footer-links">
-        <p>Journal App v1.0</p>
-        <div style="margin-top: 0.5rem;">
-            <a href="privacy-policy.html">Privacy Policy</a>
-            <a href="terms-of-service.html">Terms of Service</a>
-        </div>
-        <strong>Product of Hoola Boola Studios</strong>
-    </div>
-    
     <div id="messageBox"></div>
 
     <!-- Load Firebase config first -->
     <script src="firebase-config.js"></script>
     <!-- Load profile picture manager -->
     <script src="js/profile-pictures.js"></script>
-    <!-- Load policy manager -->
-    <script src="policy-manager.js"></script>
-    <!-- Load policy update modal -->
-    <script src="policy-update-modal.html" type="text/html" id="policyModalTemplate"></script>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
@@ -138,9 +107,6 @@
         const signOutButton = document.getElementById('signOutButton');
         const welcomeHeader = document.getElementById('welcomeHeader');
         const dashboardProfilePic = document.getElementById('dashboardProfilePic');
-
-        let currentUser = null;
-        let policyUpdateChecked = false;
 
         function showMessage(message, isError = false) {
             const box = document.getElementById('messageBox');
@@ -187,31 +153,6 @@
             };
         }
 
-        // Function called when policies are accepted
-        function onPolicyAccepted() {
-            policyUpdateChecked = true;
-            showMessage('Policy updates accepted! Welcome back.');
-            // Continue with normal app flow
-        }
-
-        // Check policy updates for user
-        async function checkPolicyUpdates(userId) {
-            if (policyUpdateChecked) return true;
-            
-            try {
-                const policiesUpToDate = await window.checkPolicyUpdates(userId);
-                if (!policiesUpToDate) {
-                    // Policy modal is showing, wait for user to accept
-                    return false;
-                }
-                policyUpdateChecked = true;
-                return true;
-            } catch (error) {
-                console.error('Error checking policy updates:', error);
-                return true; // Continue anyway if there's an error
-            }
-        }
-
         try {
             const firebaseConfig = getFirebaseConfig();
             console.log("Initializing Firebase with config:", firebaseConfig.projectId);
@@ -225,15 +166,6 @@
 
             onAuthStateChanged(auth, async (user) => {
                 if (user && !user.isAnonymous) {
-                    currentUser = user;
-                    
-                    // First check policy updates
-                    const canProceed = await checkPolicyUpdates(user.uid);
-                    if (!canProceed) {
-                        // Policy modal is showing, wait for user to accept before loading dashboard
-                        return;
-                    }
-
                     let displayName = user.displayName || 'Journaler';
 
                     try {
@@ -269,14 +201,6 @@
             showMessage("System configuration error. Please try signing in again.", true);
             setTimeout(() => { window.location.href = 'index.html'; }, 2000);
         }
-
-        // Load the policy modal HTML
-        document.addEventListener('DOMContentLoaded', () => {
-            const modalTemplate = document.getElementById('policyModalTemplate');
-            if (modalTemplate) {
-                document.body.insertAdjacentHTML('beforeend', modalTemplate.innerHTML);
-            }
-        });
     </script>
 </body>
 </html>
