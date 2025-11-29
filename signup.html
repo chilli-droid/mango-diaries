@@ -19,6 +19,17 @@
                 <input type="text" id="username" placeholder="Username" required> 
                 <input type="email" id="email" placeholder="Email" required>
                 <input type="password" id="password" placeholder="Password (min 6 characters)" required>
+                
+                <div class="agreement-section" style="margin: 1.5rem 0; padding: 1rem; background: #f8f9fa; border-radius: var(--border-radius-card);">
+                    <label style="display: flex; align-items: flex-start; gap: 0.75rem; cursor: pointer;">
+                        <input type="checkbox" id="agreeTerms" required style="margin-top: 0.25rem;">
+                        <span>
+                            I agree to the <a href="terms-of-service.html" target="_blank" style="color: var(--color-accent); font-weight: 700;">Terms of Service</a> 
+                            and <a href="privacy-policy.html" target="_blank" style="color: var(--color-accent); font-weight: 700;">Privacy Policy</a>
+                        </span>
+                    </label>
+                </div>
+
                 <button type="submit" id="submitBtn">Sign Up</button>
             </form>
             <p>Already have an account? <a href="signin.html">Sign In Here</a></p>
@@ -40,6 +51,7 @@
         const emailInput = document.getElementById('email');
         const passwordInput = document.getElementById('password');
         const submitBtn = document.getElementById('submitBtn');
+        const agreeTerms = document.getElementById('agreeTerms');
 
         function showMessage(message, isError = false) {
             const box = document.getElementById('messageBox');
@@ -140,6 +152,13 @@
                         return;
                     }
 
+                    if (!agreeTerms.checked) {
+                        showMessage('You must agree to the Terms of Service and Privacy Policy.', true);
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = 'Sign Up';
+                        return;
+                    }
+
                     try {
                         showMessage('Creating your account...');
                         
@@ -151,7 +170,9 @@
                         await setDoc(doc(db, 'users', user.uid), {
                             username: username,
                             email: email,
-                            dateJoined: serverTimestamp()
+                            dateJoined: serverTimestamp(),
+                            acceptedPolicyVersion: '2023-12-01',
+                            policyAcceptedAt: new Date().toISOString()
                         });
 
                         showMessage('Account created successfully! Redirecting to dashboard...');

@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy Policy - Mango Diaries</title>
+    <link rel="stylesheet" href="frontend-style.css">
+    <style>
+        .policy-content {
+            max-width: 800px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+        .policy-section {
+            margin-bottom: 2rem;
+        }
+        .policy-section h3 {
+            color: var(--color-text-dark);
+            margin-bottom: 1rem;
+            border-bottom: 2px solid var(--color-accent);
+            padding-bottom: 0.5rem;
+        }
+        .last-updated {
+            background: var(--color-accent);
+            padding: 1rem;
+            border-radius: var(--border-radius-card);
+            margin-bottom: 2rem;
+            text-align: center;
+            font-weight: 700;
+        }
+        .policy-links {
+            text-align: center;
+            margin: 2rem 0;
+        }
+        #policyContent {
+            min-height: 400px;
+        }
+    </style>
+</head>
+<body>
+    <header class="topbar">
+        <h1><img src="assets/logo.PNG" alt="Mango" class="logo">Mango Diaries</h1>
+        <a href="index.html">Back to Home</a>
+    </header>
+
+    <main class="container">
+        <section class="card">
+            <div class="policy-content">
+                <div class="last-updated" id="lastUpdated">
+                    📅 Loading...
+                </div>
+                
+                <h2 id="policyTitle">Privacy Policy</h2>
+                
+                <div id="policyContent">
+                    <p>Loading privacy policy content...</p>
+                </div>
+
+                <div class="policy-links">
+                    <a href="terms-of-service.html" class="button-link">View Terms of Service</a>
+                    <a href="index.html" class="button-link">Back to Home</a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script src="policy-manager.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Initialize policy manager
+            await window.policyManager.initialize();
+            
+            // Load privacy policy content
+            const policy = window.policyManager.getPolicyContent('privacy');
+            if (policy) {
+                document.getElementById('policyTitle').textContent = policy.title;
+                document.getElementById('policyContent').innerHTML = policy.content;
+                document.getElementById('lastUpdated').textContent = `📅 Last Updated: ${policy.lastUpdated}`;
+            } else {
+                document.getElementById('policyContent').innerHTML = '<p>Error loading privacy policy. Please try again later.</p>';
+            }
+        });
+    </script>
+</body>
+</html>

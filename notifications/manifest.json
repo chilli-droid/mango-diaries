@@ -1,0 +1,26 @@
+{
+  "manifest_version": 3,
+  "name": "Mango Diaries Notifications",
+  "version": "1.0",
+  "description": "Daily journal reminder system with Google Calendar integration",
+  "permissions": [
+    "notifications",
+    "storage",
+    "alarms",
+    "identity"
+  ],
+  "oauth2": {
+    "client_id": "1019175672379-bgrsconfhmurobs4ebnqfs65chmn9fm8.apps.googleusercontent.com",
+    "scopes": [
+      "https://www.googleapis.com/auth/calendar.events"
+    ]
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "key": "kopjmoainffifgejlacojflhnhehajbj"
+}
